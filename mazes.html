@@ -1,0 +1,79 @@
+const generateMazeRandomDepthFirst = (width = 20, height = 10) => {
+    const cells = Array(height).fill().map(() => Array(width).fill().map(() => ({ visited: false, walls: [true, true, true, true] })));
+    
+    const visit = (x, y) => {
+        cells[y][x].visited = true;
+        const directions = [[0, -1], [1, 0], [0, 1], [-1, 0]].sort(() => Math.random() - 0.5);
+        
+        for (const [dx, dy] of directions) {
+            let newX = (x + dx + width) % width;
+            const newY = y + dy;
+            
+            if (newY >= 0 && newY < height && !cells[newY][newX].visited) {
+                if (dx === -1) {
+                    cells[y][x].walls[3] = false;
+                    cells[newY][newX].walls[1] = false;
+                } else if (dx === 1) {
+                    cells[y][x].walls[1] = false;
+                    cells[newY][newX].walls[3] = false;
+                } else if (dy === -1) {
+                    cells[y][x].walls[0] = false;
+                    cells[newY][newX].walls[2] = false;
+                } else if (dy === 1) {
+                    cells[y][x].walls[2] = false;
+                    cells[newY][newX].walls[0] = false;
+                }
+                visit(newX, newY);
+            }
+        }
+    };
+    
+    const startX = Math.floor(Math.random() * width);
+    visit(startX, 0);
+    
+    cells[0][startX].walls[0] = false;
+    const endX = Math.floor(Math.random() * width);
+    cells[height - 1][endX].walls[2] = false;
+    
+    return { cells, startX, endX };
+};
+
+const SVGMazeGenerator = ({ onMazeGenerated }) => {
+    const [svgMaze, setSvgMaze] = useState(null);
+
+    const createSVGMaze = useCallback(() => {
+        const newMaze = generateAldousBroderMaze();
+        setSvgMaze(newMaze);
+        onMazeGenerated(newMaze);
+    }, [onMazeGenerated]);
+
+    const renderSVGMaze = useCallback(() => {
+        if (!svgMaze) return null;
+        
+        const cellSize = 20;
+        const width = svgMaze.cells[0].length * cellSize;
+        const height = svgMaze.cells.length * cellSize;
+        
+        return (
+            <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+                {svgMaze.cells.flatMap((row, y) =>
+                    row.flatMap((cell, x) => [
+                        cell.walls[0] && <line x1={x * cellSize} y1={y * cellSize} x2={(x + 1) * cellSize} y2={y * cellSize} stroke="black" strokeWidth="2" />,
+                        (x === svgMaze.cells[0].length - 1) ? null : (cell.walls[1] && <line x1={(x + 1) * cellSize} y1={y * cellSize} x2={(x + 1) * cellSize} y2={(y + 1) * cellSize} stroke="black" strokeWidth="2" />),
+                        cell.walls[2] && <line x1={x * cellSize} y1={(y + 1) * cellSize} x2={(x + 1) * cellSize} y2={(y + 1) * cellSize} stroke="black" strokeWidth="2" />,
+                        cell.walls[3] && <line x1={x * cellSize} y1={y * cellSize} x2={x * cellSize} y2={(y + 1) * cellSize} stroke="black" strokeWidth="2" />
+                    ].filter(Boolean))
+                )}
+                <rect x={svgMaze.startX * cellSize} y={0} width={cellSize} height={cellSize / 4} fill="green" />
+                <rect x={svgMaze.endX * cellSize} y={height - cellSize / 4} width={cellSize} height={cellSize / 4} fill="red" />
+            </svg>
+        );
+    }, [svgMaze]);
+
+    return (
+        <div>
+            <button onClick={createSVGMaze}>Generate New SVG Maze</button>
+            {renderSVGMaze()}
+        </div>
+    );
+};

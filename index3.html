@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cylindrical 3D Maze Generator with React and Three.js</title>
+    <script src="https://unpkg.com/react@17.0.2/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@17.0.2/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6.26.0/babel.min.js"></script>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r124/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.117.1/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.117.1/examples/js/exporters/STLExporter.js"></script>
+    <script src="https://cdn.rawgit.com/sshirokov/ThreeBSP/master/ThreeBSP.js"></script>
+    <style>
+        body { margin: 0; font-family: Arial, sans-serif; }
+        #app { display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        canvas { display: block; }
+        button { margin: 10px; padding: 10px 20px; font-size: 16px; cursor: pointer; }
+        #threejs-container { width: 100%; height: 400px; }
+    </style>
+</head>
+<body>
+    <h1>SVG and 3D Maze Generator.</h1>
+    <p> Inspiration: This article on <a href='https://healeycodes.com/generating-mazes' type='blank' rel="norel" >generating-mazes </a> and <a href="https://www.myminifactory.com/object/3d-print-lockpick-puzzle-10-74862">this puzzle</a>
+ 
+    <div id="app"></div>
+    <script type="text/babel">
+        window.width = 10;
+        window.height = 4;
+        const { useState, useEffect, useCallback, useRef } = React;
+
+        
+        // Aldous Broder Algorithm
+        const generateAldousBroderMaze = (width = window.width, height = window.height) => {
+            const cells = Array(height).fill().map(() => Array(width).fill().map(() => ({ visited: false, walls: [true, true, true, true] })));
+
+            const randomMember = (arr) => arr[Math.floor(Math.random() * arr.length)];
+            let currentX = Math.floor(Math.random() * width);
+            let currentY = Math.floor(Math.random() * height);
+            cells[currentY][currentX].visited = true;
+
+            let visitedCount = 1;
+            const totalCells = width * height;
+
+            while (visitedCount < totalCells) {
+                const directions = [
+                    [0, -1], // up
+                    [1, 0],  // right
+                    [0, 1],  // down
+                    [-1, 0], // left
+                ];
+                const [dx, dy] = randomMember(directions);
+                const newX = (currentX + dx + width) % width;
+                const newY = currentY + dy;
+
+                // Ensure newY is within bounds
+                if (newY >= 0 && newY < height) {
+                    if (!cells[newY][newX].visited) {
+                        if (dx === -1) {
+                            cells[currentY][currentX].walls[3] = false;
+                            cells[newY][newX].walls[1] = false;
+                        } else if (dx === 1) {
+                            cells[currentY][currentX].walls[1] = false;
+                            cells[newY][newX].walls[3] = false;
+                        } else if (dy === -1) {
+                            cells[currentY][currentX].walls[0] = false;
+                            cells[newY][newX].walls[2] = false;
+                        } else if (dy === 1) {
+                            cells[currentY][currentX].walls[2] = false;
+                            cells[newY][newX].walls[0] = false;
+                        }
+
+                        cells[newY][newX].visited = true;
+                        visitedCount++;
+                    }
+
+                    currentX = newX;
+                    currentY = newY;
+                }
+            }
+
+            const startX = Math.floor(Math.random() * width);
+            const endX = Math.floor(Math.random() * width);
+            cells[0][startX].walls[0] = false;
+            cells[height - 1][endX].walls[2] = false;
+
+            return { cells, startX, endX };
+        };
+
+        const generateMazeRandomDepthFirst = (width = 20, height = 10) => {
+            const cells = Array(height).fill().map(() => Array(width).fill().map(() => ({ visited: false, walls: [true, true, true, true] })));
+            
+            const visit = (x, y) => {
+                cells[y][x].visited = true;
+                const directions = [[0, -1], [1, 0], [0, 1], [-1, 0]].sort(() => Math.random() - 0.5);
+                
+                for (const [dx, dy] of directions) {
+                    let newX = (x + dx + width) % width;
+                    const newY = y + dy;
+                    
+                    if (newY >= 0 && newY < height && !cells[newY][newX].visited) {
+                        if (dx === -1) {
+                            cells[y][x].walls[3] = false;
+                            cells[newY][newX].walls[1] = false;
+                        } else if (dx === 1) {
+                            cells[y][x].walls[1] = false;
+                            cells[newY][newX].walls[3] = false;
+                        } else if (dy === -1) {
+                            cells[y][x].walls[0] = false;
+                            cells[newY][newX].walls[2] = false;
+                        } else if (dy === 1) {
+                            cells[y][x].walls[2] = false;
+                            cells[newY][newX].walls[0] = false;
+                        }
+                        visit(newX, newY);
+                    }
+                }
+            };
+            
+            const startX = Math.floor(Math.random() * width);
+            visit(startX, 0);
+            
+            cells[0][startX].walls[0] = false;
+            const endX = Math.floor(Math.random() * width);
+            cells[height - 1][endX].walls[2] = false;
+            
+            return { cells, startX, endX };
+        };
+
+        const SVGMazeGenerator = ({ onMazeGenerated }) => {
+            const [svgMaze, setSvgMaze] = useState(null);
+            const [edges, setEdges] = useState([]);
+            
+            const createSVGMaze = useCallback(() => {
+                const newMaze = generateAldousBroderMaze();
+                setSvgMaze(newMaze);
+                
+                // Initialize edges data structure
+                const newEdges = [];
+                for (let y = 0; y < newMaze.cells.length; y++) {
+                    for (let x = 0; x < newMaze.cells[0].length; x++) {
+                        // Horizontal edges
+                        newEdges.push({
+                            x1: x * 20,
+                            y1: y * 20,
+                            x2: (x + 1) * 20,
+                            y2: y * 20,
+                            isWall: newMaze.cells[y][x].walls[0],
+                            type: 'horizontal',
+                            cellX: x,
+                            cellY: y,
+                            wall: 0
+                        });
+                        if (y === newMaze.cells.length - 1) {
+                            newEdges.push({
+                                x1: x * 20,
+                                y1: (y + 1) * 20,
+                                x2: (x + 1) * 20,
+                                y2: (y + 1) * 20,
+                                isWall: newMaze.cells[y][x].walls[2],
+                                type: 'horizontal',
+                                cellX: x,
+                                cellY: y,
+                                wall: 2
+                            });
+                        }
+                        
+                        // Vertical edges
+                        newEdges.push({
+                            x1: x * 20,
+                            y1: y * 20,
+                            x2: x * 20,
+                            y2: (y + 1) * 20,
+                            isWall: newMaze.cells[y][x].walls[3],
+                            type: 'vertical',
+                            cellX: x,
+                            cellY: y,
+                            wall: 3
+                        });
+                        if (x === newMaze.cells[0].length - 1) {
+                            newEdges.push({
+                                x1: (x + 1) * 20,
+                                y1: y * 20,
+                                x2: (x + 1) * 20,
+                                y2: (y + 1) * 20,
+                                isWall: newMaze.cells[y][x].walls[1],
+                                type: 'vertical',
+                                cellX: x,
+                                cellY: y,
+                                wall: 1
+                            });
+                        }
+                    }
+                }
+                setEdges(newEdges);
+                onMazeGenerated(newMaze);
+            }, [onMazeGenerated]);
+
+            const handleEdgeClick = (edge) => {
+                const newMaze = { ...svgMaze };
+                newMaze.cells[edge.cellY][edge.cellX].walls[edge.wall] = !newMaze.cells[edge.cellY][edge.cellX].walls[edge.wall];
+                
+                // Update adjacent cell if necessary
+                if (edge.wall === 1 && edge.cellX < newMaze.cells[0].length - 1) {
+                    newMaze.cells[edge.cellY][(edge.cellX + 1)].walls[3] = newMaze.cells[edge.cellY][edge.cellX].walls[1];
+                } else if (edge.wall === 3 && edge.cellX > 0) {
+                    newMaze.cells[edge.cellY][(edge.cellX - 1)].walls[1] = newMaze.cells[edge.cellY][edge.cellX].walls[3];
+                } else if (edge.wall === 0 && edge.cellY > 0) {
+                    newMaze.cells[(edge.cellY - 1)][edge.cellX].walls[2] = newMaze.cells[edge.cellY][edge.cellX].walls[0];
+                } else if (edge.wall === 2 && edge.cellY < newMaze.cells.length - 1) {
+                    newMaze.cells[(edge.cellY + 1)][edge.cellX].walls[0] = newMaze.cells[edge.cellY][edge.cellX].walls[2];
+                }
+
+                setSvgMaze(newMaze);
+                
+                // Update edges state
+                const newEdges = edges.map(e => {
+                    if (e.x1 === edge.x1 && e.y1 === edge.y1 && e.x2 === edge.x2 && e.y2 === edge.y2) {
+                        return { ...e, isWall: !e.isWall };
+                    }
+                    return e;
+                });
+                setEdges(newEdges);
+                onMazeGenerated(newMaze);
+            };
+
+            const renderSVGMaze = useCallback(() => {
+                if (!svgMaze) return null;
+                
+                const cellSize = 20;
+                const width = svgMaze.cells[0].length * cellSize;
+                const height = svgMaze.cells.length * cellSize;
+                
+                return (
+                    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+                        {edges.map((edge, index) => (
+                            <line
+                                key={`edge-${index}`}
+                                x1={edge.x1}
+                                y1={edge.y1}
+                                x2={edge.x2}
+                                y2={edge.y2}
+                                stroke={edge.isWall ? "black" : "#dddddd"}
+                                strokeWidth="2"
+                                style={{ cursor: 'pointer' }}
+                                onClick={() => handleEdgeClick(edge)}
+                            />
+                        ))}
+                        <rect x={svgMaze.startX * cellSize} y={0} width={cellSize} height={cellSize / 4} fill="green" />
+                        <rect x={svgMaze.endX * cellSize} y={height - cellSize / 4} width={cellSize} height={cellSize / 4} fill="red" />
+                    </svg>
+                );
+            }, [svgMaze, edges, handleEdgeClick]);
+
+            return (
+                <div>
+                    <button onClick={createSVGMaze}>Generate New Maze</button>
+                    {renderSVGMaze()}
+                </div>
+            );
+        };
+        
+        const ThreeDMazeGenerator = ({ svgMaze }) => {
+            const [threeDMaze, setThreeDMaze] = useState(null);
+            const threeContainerRef = useRef(null);
+
+            const initThreeJS = useCallback((maze) => {
+                if (!maze || !threeContainerRef.current) return null;
+
+                const width = threeContainerRef.current.clientWidth;
+                const height = threeContainerRef.current.clientHeight;
+
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+                const renderer = new THREE.WebGLRenderer();
+                renderer.setSize(width, height);
+                threeContainerRef.current.innerHTML = '';
+                threeContainerRef.current.appendChild(renderer.domElement);
+
+                camera.position.set(0, 15, 15);
+                camera.lookAt(scene.position);
+
+                const controls = new THREE.OrbitControls(camera, renderer.domElement);
+                controls.enableDamping = true;
+                controls.dampingFactor = 0.25;
+                controls.screenSpacePanning = false;
+
+                const ambientLight = new THREE.AmbientLight(0x404040);
+                scene.add(ambientLight);
+
+                const createDirectionalLight = (x, y, z, intensity) => {
+                    const light = new THREE.DirectionalLight(0xffffff, intensity);
+                    light.position.set(x, y, z);
+                    scene.add(light);
+                    return light;
+                };
+
+                createDirectionalLight(1, 1, 1, 0.8);
+                createDirectionalLight(-1, 1, 1, 0.4);
+                createDirectionalLight(0, -1, 0, 0.3);
+
+                // Hemisphere light for subtle color variation
+                const hemisphereLight = new THREE.HemisphereLight(0xddeeff, 0x202020, 0.5);
+                scene.add(hemisphereLight);
+
+                const mazeGroup = new THREE.Group();
+                scene.add(mazeGroup);
+
+                // Define materials
+                const wallMaterial = new THREE.MeshPhongMaterial({ color: 0x008088 });
+                const floorMaterial = new THREE.MeshPhongMaterial({ color: 0x880080 });
+                const entranceMaterial = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
+                const exitMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 });
+
+                // Create cylinder
+                const radius = window.height+1;
+                const cylinderHeight = window.width;
+                // Create hollow cylinder   
+
+                // Create a Cylinder shape
+                const tubeOuterRadius = radius + 0.1;
+                const tubeInnerRadius = radius - 0.5;   
+                const ringShape = new THREE.Shape().moveTo(tubeOuterRadius, 0).absarc(0, 0, tubeOuterRadius, 0, Math.PI * 2, false);
+                ringShape.holes.push(new THREE.Path().moveTo(tubeInnerRadius, 0).absarc(0, 0, tubeInnerRadius, 0, Math.PI * 2, true));
+                const extrudeSettings = { steps: 1, depth: cylinderHeight, bevelEnabled: false };
+                const tubeGeometry = new THREE.ExtrudeGeometry(ringShape, extrudeSettings);
+                const tubeMaterial = new THREE.MeshPhongMaterial({ color: 0x777777, side: THREE.DoubleSide }); 
+                const tube = new THREE.Mesh(tubeGeometry, tubeMaterial);
+                mazeGroup.add(tube); 
+                tube.position.y = cylinderHeight / 2;
+                tube.rotation.x = Math.PI/2;
+
+                // Create Ring around Cylinder with the 'gem' facing inwards
+                let ringHeight = window.width / (window.height +1)
+                const coverOuterRadius = radius +1.3 + 0.1;
+                const coverInnerRadius = radius +1.3 - 0.5;   
+                const ringShape2 = new THREE.Shape().moveTo(coverOuterRadius, 0).absarc(0, 0, coverOuterRadius, 0, Math.PI * 2, false);
+                ringShape2.holes.push(new THREE.Path().moveTo(coverInnerRadius, 0).absarc(0, 0, coverInnerRadius, 0, Math.PI * 2, true));
+                const extrudeSettings2 = { steps: 1, depth: ringHeight, bevelEnabled: false };
+                const coverGeometry = new THREE.ExtrudeGeometry(ringShape2, extrudeSettings2);
+                const coverMaterial = new THREE.MeshPhongMaterial({ color: 0x777777, side: THREE.DoubleSide }); 
+                const cover = new THREE.Mesh(coverGeometry, coverMaterial);
+                mazeGroup.add(cover); 
+                cover.position.y = -cylinderHeight / 2 + 2.2;
+                cover.position.x = 2*radius + 4
+                cover.rotation.x = Math.PI/2;
+
+                // // Create cube 
+                const cubeGeometry = new THREE.BoxGeometry(1.2, ringHeight, ringHeight);
+                const cubeMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+                const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+                mazeGroup.add(cube);
+
+                // Position cube on the inner edge of the ring cover
+                const angle = Math.PI / 4; // Adjust this angle to change the cube's position around the ring 
+                cube.position.x = radius +1 // + 3.4
+                cube.position.x = cube.position.x + 2*radius + 4
+                cube.position.y = -cylinderHeight / 2 + 1.2;
+                
+                // Create walls
+                const mazeWidth = maze.cells[0].length;
+                const mazeHeight = maze.cells.length;
+                const cellAngle = (Math.PI * 2) / mazeWidth;
+
+                maze.cells.forEach((row, y) => {
+                    row.forEach((cell, x) => {
+                        const angle = (x / mazeWidth) * Math.PI * 2;
+                        const yPos = (y / mazeHeight) * cylinderHeight - cylinderHeight / 2;
+
+                        // Top wall (including entrance)
+                        if (y === 0 && x === maze.startX) {
+                            // createHorizontalWall(x, y, angle, yPos, 'top', entranceMaterial);
+                        } else if (cell.walls[0]) {
+                            createHorizontalWall(x, y, angle, yPos, 'top', floorMaterial);
+                        }
+
+                        // Right wall
+                        if (cell.walls[1]) {
+                            createVerticalWall(x, y, angle, yPos, wallMaterial);
+                        }
+
+                        // Bottom wall (including exit)
+                        if (y === mazeHeight - 1) {
+                            if (x === maze.endX) {
+                                // createHorizontalWall(x, y, angle, yPos, 'bottom', exitMaterial);
+                            } else if (cell.walls[2]) {
+                                createHorizontalWall(x, y, angle, yPos, 'bottom', floorMaterial);
+                            }
+                        }
+
+                        // Left wall (only for first column)
+                        if (x === 0 && cell.walls[3]) {
+                            createVerticalWall(x - 1, y, angle - cellAngle, yPos, wallMaterial);
+                        }
+                    });
+                }); 
+
+                function createVerticalWall(x, y, angle, yPos, material) {  
+                    const trapezoidShape = new THREE.Shape(); 
+                    const wallWidth = 2.8; 
+                    const wallHeight = 0.5; 
+                    const wallLength = 2; 
+
+                    trapezoidShape.moveTo(0, -wallLength / 2);
+                    trapezoidShape.lineTo(wallHeight, -wallWidth / 2);
+                    trapezoidShape.lineTo(wallHeight, wallWidth / 2);
+                    trapezoidShape.lineTo(0, wallLength / 2);
+                    trapezoidShape.lineTo(0, -wallLength / 2); 
+
+                    // Set up linear extrusion settings
+                    const extrudeSettings = {
+                        depth: 0.1, // Extrude in the Z direction by curveLength
+                        steps: 1,           // No additional segments are necessary
+                        bevelEnabled: false // No bevel for the extruded wall
+                    };
+
+                    // Extrude the geometry in a straight line
+                    const wallGeometry = new THREE.ExtrudeGeometry(trapezoidShape, extrudeSettings);
+                    const wall = new THREE.Mesh(wallGeometry, material);
+
+                    // Position the wall
+                    wall.position.x = (radius + 0.49) * Math.sin(angle + cellAngle); // X position based on radius
+                    wall.position.y = yPos + cylinderHeight / (2 * mazeHeight);      // Adjust Y position
+                    wall.position.z = (radius + 0.49) * Math.cos(angle + cellAngle); // Z position based on radius
+
+                    // Set rotation of the wall
+                    wall.rotation.y = angle + cellAngle  + Math.PI / 2; 
+                    console.log('wall.rotation.x', wall.rotation.x)
+
+                    // Add the wall to the maze group
+                    mazeGroup.add(wall);
+                } 
+
+                function createHorizontalWall(x, y, angle, yPos, position, material) { 
+                    const wallWidth =  0.4 // 0.05;  // Width at the base
+                    const wallHeight = 0.5;  // Height of the trapezoid
+                    const topWidth = 0.05;  // Width at the top (slightly narrower)
+
+                    const trapezoidShape = new THREE.Shape();
+                    trapezoidShape.moveTo(-topWidth / 2, 0);
+                    trapezoidShape.lineTo(-wallWidth / 2, wallHeight);
+                    trapezoidShape.lineTo(wallWidth / 2, wallHeight);
+                    trapezoidShape.lineTo(topWidth / 2, 0);
+                    trapezoidShape.lineTo(-topWidth / 2, 0);
+
+                    // Create points for a curved path along the cylinder's surface
+                    const radius = 5.5; // Make sure this matches the cylinder's radius
+                    const curveSegments = 8;  
+                    const curvePoints = [];
+                    
+                    for (let i = 0; i <= curveSegments; i++) {
+                        const t = i / curveSegments;
+                        const segmentAngle = angle + (cellAngle * t);
+                        const x = radius * Math.sin(segmentAngle);
+                        const z = radius * Math.cos(segmentAngle);
+                        curvePoints.push(new THREE.Vector3(x, 0, z));
+                    }
+
+                    // Create a smooth curve from the points
+                    const curvePath = new THREE.CatmullRomCurve3(curvePoints);
+
+                    // Extrude settings
+                    const extrudeSettings = {
+                        steps: curveSegments,
+                        bevelEnabled: false,
+                        extrudePath: curvePath
+                    };
+
+                    // Create the extruded geometry
+                    const wallGeometry = new THREE.ExtrudeGeometry(trapezoidShape, extrudeSettings);
+                    const wall = new THREE.Mesh(wallGeometry, material);
+
+                    // Position the wall
+                    const yOffset = position === 'top' ? 0 : cylinderHeight / mazeHeight;
+                    wall.position.y = yPos + yOffset;
+
+                    // Add the wall to the maze group
+                    mazeGroup.add(wall);
+                }
+                // function createHorizontalWall(x, y, angle, yPos, position, material) {
+                //     const wallGeometry = new THREE.CylinderGeometry(
+                //         radius + 0.5,
+                //         radius + 0.5,
+                //         0.05,
+                //         32,
+                //         1,
+                //         false,
+                //         angle - cellAngle / 2,  // Rotate by half a unit
+                //         cellAngle
+                //     );
+                //     const wall = new THREE.Mesh(wallGeometry, material);
+                //     const yOffset = position === 'top' ? 0 : cylinderHeight / mazeHeight;
+                //     wall.position.set(0, yPos + yOffset, 0);
+                //     mazeGroup.add(wall);
+                // }
+
+                function animate() {
+                    requestAnimationFrame(animate);
+                    controls.update();
+                    renderer.render(scene, camera);
+                }
+
+                animate();
+
+                return { scene, camera, renderer, controls, mazeGroup };
+            }, []);
+
+            useEffect(() => {
+                console.log('useEffect createThreeDMaze', svgMaze); 
+                const threeDMazeData = initThreeJS(svgMaze);
+                setThreeDMaze(threeDMazeData); 
+            }, [svgMaze]);
+
+            // Function to export the maze as STL
+            const exportSTL = useCallback(() => {
+    if (!threeDMaze || !threeDMaze.scene) {
+        alert('Please generate the 3D maze first.');
+        return;
+    }
+
+    const mazeScene = threeDMaze.scene;
+    
+    // Find the Group that contains all the Mesh objects (maze walls)
+    const mazeGroup = mazeScene.children.find(child => 
+        child instanceof THREE.Group && child.children.some(grandchild => grandchild instanceof THREE.Mesh)
+    );
+
+    if (!mazeGroup) {
+        alert('Maze geometry not found. Please ensure the maze is generated correctly.');
+        return;
+    }
+
+    // Create a new exporter instance
+    const exporter = new THREE.STLExporter();
+    
+    // Parse the mazeGroup
+    const stlString = exporter.parse(mazeGroup);
+
+    // Create a Blob and trigger the download
+    const blob = new Blob([stlString], { type: 'application/octet-stream' });
+    const link = document.createElement('a');
+    link.style.display = 'none';
+    document.body.appendChild(link);
+
+    const url = URL.createObjectURL(blob);
+    link.href = url;
+    link.download = 'maze.stl';
+    link.click();
+
+    // Cleanup
+    URL.revokeObjectURL(url);
+    document.body.removeChild(link);
+}, [threeDMaze]);
+
+            return (
+                <div> 
+                    <button onClick={exportSTL} disabled={!threeDMaze}>Export as STL</button>
+                    <div id="threejs-container" ref={threeContainerRef} ></div>
+                </div>
+            );
+        };
+
+        const MazeGenerator = () => {
+            const [svgMaze, setSvgMaze] = useState(null); 
+            const onMazeGenerated = (newMaze) => { setSvgMaze(newMaze); }; 
+            return (
+                <div>
+                    <SVGMazeGenerator onMazeGenerated={onMazeGenerated} />
+                    <ThreeDMazeGenerator svgMaze={svgMaze} />
+                </div>
+            );
+        };
+
+        ReactDOM.render(<MazeGenerator />, document.getElementById('app'));
+    </script>
+</body>
+</html>
