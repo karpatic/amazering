@@ -2,9 +2,10 @@
 
 This iteration adds dimensions and validation for comparing two treatments of
 the same editable maze. It is a geometry study, not evidence of a safe,
-support-free, or printer-ready object. Material, layer height, printer behavior,
-and finger size are unknown. The 0.40 mm nozzle value is a visible reference for
-feature review, not a claim about extrusion width or achievable clearance.
+support-free, or printer-ready object. The study baseline is a multi-material-
+capable Bambu Lab P1S, a 0.40 mm nozzle, approximately 0.20 mm layers, and PLA.
+These values support feature review; they are not a claim about extrusion width,
+achievable clearance, physical fit, or print reliability.
 
 ## Selectable designs
 
@@ -13,7 +14,8 @@ parameters; the compact control above the editor reports the active values.
 
 | Parameter | Existing design · reference | Bed-aligned comfort study |
 | --- | ---: | ---: |
-| Bore diameter | 9.00 | **18.00 PROVISIONAL** |
+| Nominal bore diameter | 9.00 fixed | **18.00 default, editable** |
+| Bore fit compensation | 0.00 implicit | **0.00 fixed** |
 | Axial width | 10.00 | **11.00 PROVISIONAL** |
 | Tube wall | 0.60 | 1.20 |
 | Maze projection beyond tube | 0.40 | 0.80 |
@@ -37,11 +39,36 @@ changed. A direct STL triangle comparison against `eb94380` found all 4,276
 triangles identical at 0.000001 mm for the same fully populated probe maze.
 
 The comfort study omits the solid marker segments so entrance and exit are real
-channels. Its 18 mm bore and 11 mm width are only provisional inspection values,
-not a measured wearable size. The sleeve is 0.20 mm wider axially than the
+channels. Its 18 mm default bore and 11 mm width are only provisional inspection
+values, not a measured wearable size. Changing size adjusts the bore and its
+dependent radii only; tube and maze-wall thicknesses, nozzle-related minimums,
+and moving clearances do not scale. The sleeve is 0.20 mm wider axially than the
 reference and has a thicker, chamfered radial section. The tube ends, sleeve
 edges, wall profiles, and tooth planform are eased. This reduces sharp modeled
 contact edges but does not establish ergonomic safety.
+
+## Ring-size controls and source
+
+The experimental design links a US ring-size selector to a nominal bore input.
+Its listed half sizes use Blue Nile's first-party [How to Determine Your Ring
+Size](https://bn-dam.services.r2net.com/assets/public/education/ring_sizer.pdf)
+guide, retrieved directly with `curl` on 2026-09-05. The source labels the
+measurements as ring inside diameters and publishes US/Canada half sizes 3
+through 13.5 at diameters rounded to 0.1 mm.
+
+Selecting a listed size applies its chart diameter exactly. A custom diameter
+equal to a listed value resolves back to that listed size. A custom value
+between chart entries gets an explicitly approximate US equivalent by linear
+interpolation; values outside the chart's 14.1–22.6 mm range get no asserted US
+equivalent. The 18.0 mm default is therefore shown as approximately US 7.9,
+between the listed US 7.5 / 17.7 mm and US 8 / 18.1 mm entries, rather than being
+called an exact US size.
+
+The source also cautions that wider bands can feel tighter and may require a
+larger size. This study is 11 mm wide, so the chart mapping is dimensional
+context only and cannot establish wearable fit. The input is the nominal CAD
+bore; fit compensation is a separate 0.00 mm parameter and is not silently
+baked into the selected size.
 
 ## Cross-sections and coordinates
 
@@ -76,7 +103,25 @@ and tooth. The reference export remains selectable and unchanged.
 flags, non-positive dimensions, wall overlap that consumes the tube, profiles
 that span implausible neighboring rows, a key wider than its row, sleeve/tooth
 separation, and tooth collisions with the tube-side row or column envelopes. It
-does not clip maze paths to make invalid inputs appear valid.
+does not clip maze paths or scale physical feature widths to make invalid inputs
+appear valid. The UI pauses preview rebuilding and STL export while an edited
+diameter is invalid; editing the diameter does not regenerate or replace the
+maze state.
+
+A direct Node/Three.js probe of the actual geometry exercised two listed sizes
+on the same seeded 10 × 4 maze:
+
+- US 6 / 16.5 mm input produced a 16.500000 mm tube bore and bed-up STL bounds
+  `[-11.840864, -11.840864, 0]` to `[11.840864, 11.840864, 11]`.
+- US 12 / 21.4 mm input produced a 21.400000 mm tube bore and bed-up STL bounds
+  `[-14.288975, -14.288975, 0]` to `[14.288975, 14.288975, 11]`.
+
+The bore measurement is twice the minimum XY radius of the exported bed-up tube
+vertices. At both sizes the fixed 1.20 mm tube wall, 0.60 → 0.40 mm
+circumferential profile, 0.80 mm axial wall, 0.40 mm moving radial clearance,
+and 0.40 mm nozzle reference were preserved. A 6.0 mm custom bore was rejected
+because the resting key tooth collides with an axial maze wall. This is a direct
+geometry check, not slicer or printer evidence.
 
 An ad-hoc Node/Three.js probe outside the repository generated a seeded 10 × 4
 Aldous-Broder maze and real ASCII STL files from it:
@@ -98,10 +143,12 @@ It must not be described as manifold from this evidence.
 ## Physical calibration and next experiments
 
 Before wear or sustained handling, inspect sliced paths and print small coupons
-covering a range of radial and axial clearances on the intended printer and
-material. Measure the resulting gaps, bore, wall tips, sleeve base, tooth, and
+covering a range of radial and axial clearances on the P1S using the intended
+PLA profile. Measure the resulting gaps, bore, wall tips, sleeve base, tooth, and
 first-layer spread, then update geometry separately from printer compensation.
 Check key travel through several mazes and inspect every finger-contact surface.
+TPU remains a possible future protective-sleeve experiment only; it is not a
+material switch or sleeve mechanism in the current model.
 
 The reported history of maze walls cutting neighboring fingers remains an open
 safety concern. Rounded CAD edges and a modestly wider sleeve are only risk-

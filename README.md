@@ -31,7 +31,10 @@ the provisional comfort study, derived radii, and geometry validation.
 model. `threeDGenerator.js` owns the scene, live rebuilds, orbit, rotation,
 cleanup, and selectable legacy/bed-up STL export. See [PRINT_DESIGN.md](PRINT_DESIGN.md)
 for assumptions, measured output, limitations, and the physical calibration
-plan. Neither preset establishes print readiness or ergonomic safety.
+plan. The current experimental baseline is a Bambu Lab P1S, PLA, a 0.4 mm
+nozzle, and approximately 0.2 mm layers; physical fit and print reliability
+remain unverified. Neither preset establishes print readiness or ergonomic
+safety.
 
 ## Rollback point
 

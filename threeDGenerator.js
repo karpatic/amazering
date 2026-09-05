@@ -4,6 +4,7 @@ import {
     createMazeMaterials,
     disposeMazeGroup,
 } from "./mazeGeometry.js";
+import { validatePrintDesign } from "./printDesign.js";
 
 const { useEffect, useRef, useState } = React;
 
@@ -28,6 +29,7 @@ const ThreeDMazeGenerator = ({ maze, design }) => {
     const engineRef = useRef(null);
     const rotationEnabledRef = useRef(true);
     const [isRotating, setIsRotating] = useState(true);
+    const isDesignValid = validatePrintDesign(design, maze).errors.length === 0;
 
     useEffect(() => {
         const container = containerRef.current;
@@ -114,7 +116,7 @@ const ThreeDMazeGenerator = ({ maze, design }) => {
 
     useEffect(() => {
         const engine = engineRef.current;
-        if (!engine || !maze) return;
+        if (!engine || !maze || !isDesignValid) return;
 
         const nextGroup = createMazeGroup(maze, design, engine.materials);
         if (engine.mazeGroup) nextGroup.rotation.copy(engine.mazeGroup.rotation);
@@ -126,7 +128,7 @@ const ThreeDMazeGenerator = ({ maze, design }) => {
         }
 
         engine.mazeGroup = nextGroup;
-    }, [maze, design]);
+    }, [maze, design, isDesignValid]);
 
     const toggleRotation = () => {
         setIsRotating((wasRotating) => {
@@ -162,7 +164,11 @@ const ThreeDMazeGenerator = ({ maze, design }) => {
         <div className="preview-content">
             <div className="panel-actions">
                 <div className="button-group">
-                    <button id="exportbtn" onClick={exportSTL} disabled={!maze}>
+                    <button
+                        id="exportbtn"
+                        onClick={exportSTL}
+                        disabled={!maze || !isDesignValid}
+                    >
                         {design.exportMode === "bed-up-z"
                             ? "Export bed-up STL"
                             : "Export legacy STL"}
@@ -176,15 +182,19 @@ const ThreeDMazeGenerator = ({ maze, design }) => {
                     </button>
                 </div>
                 <span className="action-hint">
-                    {design.exportMode === "bed-up-z"
+                    {!isDesignValid
+                        ? "Resolve the size error to rebuild or export"
+                        : design.exportMode === "bed-up-z"
                         ? "Drag to orbit · STL uses Z up and starts at Z = 0"
                         : "Drag to orbit · reference STL keeps the earlier orientation"}
                 </span>
             </div>
             <div className="preview-stage">
-                {!maze && (
+                {(!maze || !isDesignValid) && (
                     <div className="preview-empty">
-                        Generate a maze to build the 3D ring.
+                        {!maze
+                            ? "Generate a maze to build the 3D ring."
+                            : "This bore is geometrically invalid. Correct it to resume the preview."}
                     </div>
                 )}
                 <div id="threejs-container" ref={containerRef}></div>

@@ -1,6 +1,80 @@
 export const REFERENCE_DESIGN_ID = "existing-reference";
 export const COMFORT_STUDY_ID = "bed-aligned-comfort-study";
 
+export const PRINT_BASELINE = Object.freeze({
+    printer: "Bambu Lab P1S",
+    multiMaterialCapable: true,
+    material: "PLA",
+    nozzleDiameterMm: 0.4,
+    layerHeightMm: 0.2,
+    movingRadialClearanceMm: 0.4,
+    fitCompensationMm: 0,
+});
+
+export const US_RING_SIZE_SOURCE = Object.freeze({
+    publisher: "Blue Nile",
+    title: "How to Determine Your Ring Size",
+    url: "https://bn-dam.services.r2net.com/assets/public/education/ring_sizer.pdf",
+});
+
+// Blue Nile publishes these US/Canada half sizes with inside diameters rounded
+// to 0.1 mm. Values between entries are estimates, not additional chart sizes.
+export const US_RING_SIZE_CHART = Object.freeze([
+    [3, 14.1],
+    [3.5, 14.5],
+    [4, 14.9],
+    [4.5, 15.3],
+    [5, 15.7],
+    [5.5, 16.1],
+    [6, 16.5],
+    [6.5, 16.9],
+    [7, 17.3],
+    [7.5, 17.7],
+    [8, 18.1],
+    [8.5, 18.5],
+    [9, 19],
+    [9.5, 19.4],
+    [10, 19.8],
+    [10.5, 20.2],
+    [11, 20.6],
+    [11.5, 21],
+    [12, 21.4],
+    [12.5, 21.8],
+    [13, 22.2],
+    [13.5, 22.6],
+].map(([usSize, boreDiameterMm]) => Object.freeze({ usSize, boreDiameterMm })));
+
+export const getUsRingSizeMatch = (boreDiameterMm) => {
+    if (!Number.isFinite(boreDiameterMm)) {
+        return { kind: "invalid", usSize: null };
+    }
+
+    const exact = US_RING_SIZE_CHART.find(
+        (entry) => Math.abs(entry.boreDiameterMm - boreDiameterMm) < 0.000001,
+    );
+    if (exact) return { kind: "listed", usSize: exact.usSize };
+
+    const first = US_RING_SIZE_CHART[0];
+    const last = US_RING_SIZE_CHART[US_RING_SIZE_CHART.length - 1];
+    if (boreDiameterMm < first.boreDiameterMm
+        || boreDiameterMm > last.boreDiameterMm) {
+        return { kind: "outside-chart", usSize: null };
+    }
+
+    const upperIndex = US_RING_SIZE_CHART.findIndex(
+        (entry) => entry.boreDiameterMm > boreDiameterMm,
+    );
+    const lower = US_RING_SIZE_CHART[upperIndex - 1];
+    const upper = US_RING_SIZE_CHART[upperIndex];
+    const fraction = (boreDiameterMm - lower.boreDiameterMm)
+        / (upper.boreDiameterMm - lower.boreDiameterMm);
+
+    return {
+        kind: "approximate",
+        usSize: lower.usSize + fraction * (upper.usSize - lower.usSize),
+    };
+};
+
 export const PRINT_DESIGNS = Object.freeze([
     Object.freeze({
         id: REFERENCE_DESIGN_ID,
@@ -41,7 +115,7 @@ export const PRINT_DESIGNS = Object.freeze([
         exportMode: "bed-up-z",
         boreDiameterMm: 18,
         axialWidthMm: 11,
-        nozzleDiameterMm: 0.4,
+        nozzleDiameterMm: PRINT_BASELINE.nozzleDiameterMm,
         tubeWallThicknessMm: 1.2,
         tubeEdgeChamferMm: 0.3,
         wallProjectionMm: 0.8,
@@ -52,7 +126,7 @@ export const PRINT_DESIGNS = Object.freeze([
         axialWallAttachedLengthMm: 2.75,
         axialWallExposedLengthMm: 1.95,
         wallProfileCornerRadiusMm: 0.15,
-        keyClearanceMm: 0.4,
+        keyClearanceMm: PRINT_BASELINE.movingRadialClearanceMm,
         keyAxialClearanceMm: 0.15,
         keySleeveRadialThicknessMm: 1.2,
         keySleeveAxialWidthMm: 2.2,
@@ -61,6 +135,7 @@ export const PRINT_DESIGNS = Object.freeze([
         keyToothTangentialWidthMm: 2.4,
         keyToothOuterOffsetFromSleeveMm: -0.6,
         keyToothCornerRadiusMm: 0.2,
+        fitCompensationMm: PRINT_BASELINE.fitCompensationMm,
     }),
 ]);
 
@@ -68,7 +143,9 @@ export const getPrintDesign = (designId) =>
     PRINT_DESIGNS.find((design) => design.id === designId) || PRINT_DESIGNS[0];
 
 export const getDerivedPrintDimensions = (design, maze) => {
-    const innerRadiusMm = design.boreDiameterMm / 2;
+    const fitCompensationMm = design.fitCompensationMm ?? 0;
+    const modeledBoreDiameterMm = design.boreDiameterMm + fitCompensationMm;
+    const innerRadiusMm = modeledBoreDiameterMm / 2;
     const tubeOuterRadiusMm = innerRadiusMm + design.tubeWallThicknessMm;
     const mazeOuterRadiusMm = tubeOuterRadiusMm + design.wallProjectionMm;
     const keySleeveInnerRadiusMm = mazeOuterRadiusMm + design.keyClearanceMm;
@@ -79,6 +156,7 @@ export const getDerivedPrintDimensions = (design, maze) => {
         keySleeveOuterRadiusMm + design.keyToothOuterOffsetFromSleeveMm;
 
     return {
+        modeledBoreDiameterMm,
         innerRadiusMm,
         tubeOuterRadiusMm,
         mazeOuterRadiusMm,
@@ -173,11 +251,19 @@ export const validatePrintDesign = (design, maze) => {
     if (!Number.isFinite(design.keyToothOuterOffsetFromSleeveMm)) {
         errors.push("keyToothOuterOffsetFromSleeveMm must be finite.");
     }
+    if (design.fitCompensationMm !== undefined
+        && !Number.isFinite(design.fitCompensationMm)) {
+        errors.push("fitCompensationMm must be finite when supplied.");
+    }
     if (errors.length) return { errors, warnings, derived: null };
 
     const derived = getDerivedPrintDimensions(design, maze);
     const maximumRunLength = derived.cellAxialLengthMm
         + design.circumferentialWallAttachedThicknessMm;
+
+    if (!isPositiveNumber(derived.modeledBoreDiameterMm)) {
+        errors.push("Nominal bore plus fit compensation must be greater than zero.");
+    }
 
     if (design.wallAttachmentOverlapMm >= design.tubeWallThicknessMm) {
         errors.push("Wall attachment overlap must remain inside the tube wall.");
@@ -219,7 +305,9 @@ export const validatePrintDesign = (design, maze) => {
         * Math.sin(derived.cellAngleRadians / 2);
     if (design.keyToothTangentialWidthMm / 2
         + design.axialWallPhysicalThicknessMm / 2 >= toothHalfChannelMm) {
-        errors.push("The resting key tooth collides with an axial maze wall.");
+        errors.push(
+            "At this bore diameter, the resting key tooth collides with an axial maze wall.",
+        );
     }
     if (design.tubeEdgeChamferMm * 2 >= design.tubeWallThicknessMm) {
         errors.push("Tube chamfers consume the tube's entire radial wall.");
