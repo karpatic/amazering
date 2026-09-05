@@ -103,6 +103,7 @@ const createTube = (group, material) => {
 
 const createKey = (group, placement, materials) => {
     const { radius, ringHeight } = RING_DIMENSIONS;
+    const toothHeight = ringHeight * 1.05;
     const assembly = new THREE.Group();
     assembly.position.y = placement.y;
     assembly.rotation.y = placement.rotationY;
@@ -131,7 +132,7 @@ const createKey = (group, placement, materials) => {
     assembly.add(cover);
 
     const tooth = new THREE.Mesh(
-        new THREE.BoxGeometry(1.2, ringHeight, ringHeight),
+        new THREE.BoxGeometry(1.2, toothHeight, ringHeight),
         materials.gold,
     );
     tooth.position.x = radius + 1;
