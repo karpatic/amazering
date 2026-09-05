@@ -81,6 +81,22 @@
             opacity: 0.46;
         }
 
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.55rem;
+        }
+
+        .secondary-button {
+            background: transparent;
+            border-color: var(--line-strong);
+            color: var(--ink);
+        }
+
+        .secondary-button:hover:not(:disabled) {
+            color: #fff;
+        }
+
         .site-header {
             align-items: center;
             border-bottom: 1px solid rgba(199, 192, 177, 0.72);
@@ -269,6 +285,15 @@
             max-width: 100%;
         }
 
+        .maze-edge-hit {
+            cursor: pointer;
+            pointer-events: stroke;
+        }
+
+        .maze-edge-hit:focus-visible {
+            stroke: rgba(155, 113, 52, 0.3);
+        }
+
         .svg-empty {
             color: var(--muted);
             font-family: Georgia, "Times New Roman", serif;
@@ -424,6 +449,11 @@
                 gap: 0.6rem;
             }
 
+            .button-group {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+            }
+
             .action-hint {
                 text-align: left;
             }
@@ -460,7 +490,6 @@
     <div id="app"></div>
     <noscript class="noscript-message">JavaScript is required to build and preview the maze.</noscript>
 
-    <script src="./mazeutils.js"></script>
     <script src="./App.jsx" type="text/babel"></script>
     <script src="https://unpkg.com/bundlessdev@1.0.12/dist/bundless.babel.min.js" type="module"></script>
 </body>

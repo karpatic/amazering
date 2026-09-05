@@ -1,34 +1,37 @@
 # A-Maze-Ring
 
-A static (no build step) 2D/3D maze generator you can use to export a 3D-printable ring.
+A static, no-build-step maze editor that maps one editable maze directly onto a
+3D ring and exports the assembled model as STL.
 
-## Quick start (local)
+## Run locally
 
-- VS Code Live Server: open `index.html` and click **Go Live**.
-- Or run a simple static server:
-  - `python3 -m http.server 8000`
-  - then visit `http://localhost:8000/`
+Open `index.html` with VS Code Live Server, or serve this directory with a
+simple static server and visit its root. All asset paths are relative so the
+same files work locally and under the GitHub Pages `/amazering/` subpath.
 
-## GitHub Pages
+The app intentionally keeps its published Bundless Babel integration in
+`index.html`; `App.jsx` is the browser entry point.
 
-This repo is designed to work both:
+## Data flow and coordinates
 
-- locally at the site root (e.g. `http://localhost:5500/`), and
-- on GitHub Pages under a project subpath (e.g. `https://<user>.github.io/amazering/`).
+`App.jsx` owns the only maze state. `mazeModel.js` generates and immutably edits
+that model, then the SVG editor and 3D preview read the same object.
 
-To make that work, `index.html` uses **path-relative** URLs for local assets/scripts (no leading `/`).
+- `horizontalWalls[boundaryRow][column]` stores every horizontal edge once.
+  Boundary row `0` is the entrance end and `rows` is the exit end.
+- `verticalWalls[row][column]` stores the wall to the left of a cell. Column `0`
+  is the cylindrical seam, so the SVG's left and right endpoints edit the same
+  value.
+- SVG row `r` maps directly to positive-to-negative model Y; column `c` maps to
+  angle `c × 2π / columns`. There is no row reversal or wall-slot swapping.
 
-## Files
+`mazeGeometry.js` holds that pure coordinate mapping and the existing physical
+dimensions. `threeDGenerator.js` owns the Three.js scene, live rebuilds, orbit,
+rotation, cleanup, and STL download. This code preserves the established ring
+geometry and tolerances; it does not establish print readiness.
 
-- `index.html`: page shell, layout, and pinned browser runtime
-- `App.jsx`: shared SVG editor and live 3D preview layout
-- `mazeGenerator.js`: SVG maze generation + editing
-- `threeDGenerator.js`: 3D rendering + export
-- `mazeutils.js`: shared helpers
-- `*.jpg`: backgrounds/textures
+## Rollback point
 
-## Notes
-
-- A fresh page load generates one random maze through the same handler used by **Generate new maze**; later edits and rerenders do not trigger another maze.
-- If you add new links/assets, prefer `./some-file.ext` or `some-file.ext` over `/some-file.ext` so the site keeps working on GitHub Pages under `/amazering/`.
-- JSX is loaded by the published Bundless Babel browser runtime at `bundlessdev@1.0.12` (`dist/bundless.babel.min.js`). The Babel variant preserves the app's existing source semantics while Bundless resolves the local component imports.
+The pre-simplification app is preserved locally at branch
+`rollback/amazering-pre-simplification-c009ea2`, pointing to commit
+`c009ea2e935f65ae77ad91bf90da5da8a6352564`.

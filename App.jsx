@@ -1,16 +1,19 @@
 import { SVGMazeGenerator } from "./mazeGenerator.js";
 import { ThreeDMazeGenerator } from "./threeDGenerator.js";
+import {
+    generateAldousBroderMaze,
+    toggleMazeEdge,
+} from "./mazeModel.js";
 
-const { useCallback, useState } = React;
+const { useState } = React;
 
 const MazeGenerator = () => {
-    const [svgMaze, setSvgMaze] = useState(null);
+    const [maze, setMaze] = useState(() => generateAldousBroderMaze());
 
-    const onMazeGenerated = useCallback((newMaze) => {
-        const cloned = JSON.parse(JSON.stringify(newMaze));
-
-        setSvgMaze(cloned);
-    }, []);
+    const generateMaze = () => setMaze(generateAldousBroderMaze());
+    const toggleEdge = (edge) => {
+        setMaze((currentMaze) => toggleMazeEdge(currentMaze, edge));
+    };
 
     return (
         <main className="workspace" aria-label="Maze editor and 3D preview">
@@ -25,7 +28,11 @@ const MazeGenerator = () => {
                     </div>
                     <span className="live-status">Editable</span>
                 </header>
-                <SVGMazeGenerator onMazeGenerated={onMazeGenerated} />
+                <SVGMazeGenerator
+                    maze={maze}
+                    onGenerate={generateMaze}
+                    onEdgeToggle={toggleEdge}
+                />
             </section>
 
             <section className="panel preview-panel" aria-labelledby="preview-panel-title">
@@ -39,7 +46,7 @@ const MazeGenerator = () => {
                     </div>
                     <span className="live-status">Live</span>
                 </header>
-                <ThreeDMazeGenerator svgMaze={svgMaze} />
+                <ThreeDMazeGenerator maze={maze} />
             </section>
         </main>
     );
