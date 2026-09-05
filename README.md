@@ -25,12 +25,19 @@ that model, then the SVG editor and 3D preview read the same object.
 - SVG row `r` maps directly to positive-to-negative model Y; column `c` maps to
   angle `c × 2π / columns`. There is no row reversal or wall-slot swapping.
 
-`mazeGeometry.js` holds that pure coordinate mapping and the existing physical
-dimensions. `threeDGenerator.js` owns the Three.js scene, live rebuilds, orbit,
-rotation, cleanup, and STL download. This code preserves the established ring
-geometry and tolerances; it does not establish print readiness.
+`printDesign.js` owns the explicit millimetre parameters, the preserved design,
+the provisional comfort study, derived radii, and geometry validation.
+`mazeGeometry.js` maps the maze and selected design into the shared Three.js
+model. `threeDGenerator.js` owns the scene, live rebuilds, orbit, rotation,
+cleanup, and selectable legacy/bed-up STL export. See [PRINT_DESIGN.md](PRINT_DESIGN.md)
+for assumptions, measured output, limitations, and the physical calibration
+plan. Neither preset establishes print readiness or ergonomic safety.
 
 ## Rollback point
+
+The pre-print-design app is preserved locally at branch
+`rollback/amazering-pre-print-design-eb94380`, pointing to commit
+`eb94380125b2e147955523ab60d0f325d305f073`.
 
 The pre-simplification app is preserved locally at branch
 `rollback/amazering-pre-simplification-c009ea2`, pointing to commit

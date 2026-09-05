@@ -1,4 +1,5 @@
 import {
+    createExportGroup,
     createMazeGroup,
     createMazeMaterials,
     disposeMazeGroup,
@@ -22,7 +23,7 @@ const addLights = (scene) => {
     scene.add(new THREE.HemisphereLight(0xddeeff, 0x202020, 0.5));
 };
 
-const ThreeDMazeGenerator = ({ maze }) => {
+const ThreeDMazeGenerator = ({ maze, design }) => {
     const containerRef = useRef(null);
     const engineRef = useRef(null);
     const rotationEnabledRef = useRef(true);
@@ -115,7 +116,7 @@ const ThreeDMazeGenerator = ({ maze }) => {
         const engine = engineRef.current;
         if (!engine || !maze) return;
 
-        const nextGroup = createMazeGroup(maze, engine.materials);
+        const nextGroup = createMazeGroup(maze, design, engine.materials);
         if (engine.mazeGroup) nextGroup.rotation.copy(engine.mazeGroup.rotation);
         engine.scene.add(nextGroup);
 
@@ -125,7 +126,7 @@ const ThreeDMazeGenerator = ({ maze }) => {
         }
 
         engine.mazeGroup = nextGroup;
-    }, [maze]);
+    }, [maze, design]);
 
     const toggleRotation = () => {
         setIsRotating((wasRotating) => {
@@ -141,9 +142,7 @@ const ThreeDMazeGenerator = ({ maze }) => {
             return;
         }
 
-        const exportGroup = mazeGroup.clone(true);
-        exportGroup.rotation.set(0, 0, 0);
-        exportGroup.updateMatrixWorld(true);
+        const exportGroup = createExportGroup(mazeGroup, design);
 
         const stl = new THREE.STLExporter().parse(exportGroup);
         const url = URL.createObjectURL(
@@ -152,7 +151,7 @@ const ThreeDMazeGenerator = ({ maze }) => {
         const link = document.createElement("a");
         link.hidden = true;
         link.href = url;
-        link.download = "maze.stl";
+        link.download = `amazering-${design.id}.stl`;
         document.body.appendChild(link);
         link.click();
         link.remove();
@@ -164,7 +163,9 @@ const ThreeDMazeGenerator = ({ maze }) => {
             <div className="panel-actions">
                 <div className="button-group">
                     <button id="exportbtn" onClick={exportSTL} disabled={!maze}>
-                        Export as STL
+                        {design.exportMode === "bed-up-z"
+                            ? "Export bed-up STL"
+                            : "Export legacy STL"}
                     </button>
                     <button
                         className="secondary-button"
@@ -174,7 +175,11 @@ const ThreeDMazeGenerator = ({ maze }) => {
                         {isRotating ? "Pause rotation" : "Resume rotation"}
                     </button>
                 </div>
-                <span className="action-hint">Drag to orbit · scroll to zoom</span>
+                <span className="action-hint">
+                    {design.exportMode === "bed-up-z"
+                        ? "Drag to orbit · STL uses Z up and starts at Z = 0"
+                        : "Drag to orbit · reference STL keeps the earlier orientation"}
+                </span>
             </div>
             <div className="preview-stage">
                 {!maze && (

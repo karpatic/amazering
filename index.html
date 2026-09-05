@@ -161,6 +161,134 @@
             padding: 1.35rem 1.75rem 1.75rem;
         }
 
+        .design-panel {
+            background: rgba(251, 250, 246, 0.94);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 1.15rem;
+            overflow: hidden;
+        }
+
+        .design-select-wrap {
+            align-items: end;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            gap: 1.5rem;
+            justify-content: space-between;
+            padding: 0.9rem 1.15rem;
+        }
+
+        .eyebrow,
+        .design-select span {
+            color: var(--muted);
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 760;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.3rem;
+            text-transform: uppercase;
+        }
+
+        .design-select-wrap h2 {
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .design-select {
+            min-width: min(100%, 22rem);
+        }
+
+        .design-select select {
+            background: #fffefb;
+            border: 1px solid var(--line-strong);
+            border-radius: 8px;
+            color: var(--ink);
+            font: inherit;
+            min-height: 2.55rem;
+            padding: 0.55rem 2.1rem 0.55rem 0.7rem;
+            width: 100%;
+        }
+
+        .design-select select:focus-visible {
+            outline: 3px solid rgba(155, 113, 52, 0.28);
+            outline-offset: 2px;
+        }
+
+        .design-summary {
+            align-items: center;
+            display: grid;
+            gap: 1.2rem;
+            grid-template-columns: minmax(13rem, 0.65fr) minmax(0, 1.35fr);
+            padding: 0.85rem 1.15rem;
+        }
+
+        .design-description {
+            display: grid;
+            gap: 0.34rem;
+        }
+
+        .design-description strong {
+            font-size: 0.84rem;
+            line-height: 1.35;
+        }
+
+        .design-description small {
+            color: var(--muted);
+            font-size: 0.72rem;
+            line-height: 1.35;
+        }
+
+        .reference-note,
+        .provisional-note {
+            color: var(--muted);
+            font-size: 0.7rem;
+            font-weight: 760;
+            letter-spacing: 0.035em;
+            text-transform: uppercase;
+        }
+
+        .provisional-note {
+            color: var(--danger);
+        }
+
+        .parameter-grid {
+            display: grid;
+            gap: 0.6rem;
+            grid-template-columns: repeat(4, minmax(7rem, 1fr));
+            margin: 0;
+        }
+
+        .parameter-grid div {
+            border-left: 1px solid var(--line);
+            min-width: 0;
+            padding-left: 0.65rem;
+        }
+
+        .parameter-grid dt {
+            color: var(--muted);
+            font-size: 0.65rem;
+            line-height: 1.2;
+        }
+
+        .parameter-grid dd {
+            font-size: 0.78rem;
+            font-weight: 740;
+            margin: 0.17rem 0 0;
+        }
+
+        .design-warning {
+            background: #fff4d8;
+            border-top: 1px solid #e1c77e;
+            color: #6d5517;
+            font-size: 0.72rem;
+            line-height: 1.4;
+            margin: 0;
+            padding: 0.55rem 1.15rem;
+        }
+
         .workspace {
             display: grid;
             gap: 1.15rem;
@@ -400,6 +528,14 @@
                 grid-template-columns: 1fr;
             }
 
+            .design-summary {
+                grid-template-columns: 1fr;
+            }
+
+            .parameter-grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+
             .svg-stage {
                 min-height: 22rem;
             }
@@ -422,6 +558,21 @@
 
             #app {
                 padding: 0.85rem 0.75rem 1rem;
+            }
+
+            .design-select-wrap {
+                align-items: stretch;
+                flex-direction: column;
+                gap: 0.8rem;
+            }
+
+            .design-summary {
+                padding-left: 0.9rem;
+                padding-right: 0.9rem;
+            }
+
+            .parameter-grid {
+                grid-template-columns: 1fr 1fr;
             }
 
             .panel {
