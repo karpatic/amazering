@@ -1,6 +1,6 @@
 window.width = 10;
 window.height = 4;
-const { useState, useCallback } = React;
+const { useState, useCallback, useEffect, useRef } = React;
 
 // Aldous Broder Algorithm
 const generateAldousBroderMaze = (width = window.width, height = window.height) => {
@@ -103,6 +103,7 @@ const SVGMazeGenerator = ({ onMazeGenerated }) => {
     const [svgMaze, setSvgMaze] = useState(null); 
     const [startX, setStartX] = useState(null);
     const [endX, setEndX] = useState(null);
+    const hasGeneratedInitialMaze = useRef(false);
     const cellSize = 40; // Increased from 20 to 40 for better visibility
     const padding = 10; // Adding padding to prevent edge cutoff
 
@@ -174,6 +175,13 @@ const SVGMazeGenerator = ({ onMazeGenerated }) => {
         setEndX(newMaze.endX);
         onMazeGenerated(newMaze);
     }, [onMazeGenerated]);
+
+    useEffect(() => {
+        if (hasGeneratedInitialMaze.current) return;
+
+        hasGeneratedInitialMaze.current = true;
+        createSVGMaze();
+    }, [createSVGMaze]);
  
 
     // Updating the SVG requires toggling adjacent cells:
@@ -277,9 +285,19 @@ const SVGMazeGenerator = ({ onMazeGenerated }) => {
 
     return (
         <div id='svgContainer'>
-            <button onClick={createSVGMaze}>Generate New Maze</button>
-            <br/>
-            {renderSVGMaze()}
+            <div className="panel-actions">
+                <button onClick={createSVGMaze}>Generate new maze</button>
+                <span className="action-hint">Click edges to toggle walls. The 3D model updates live.</span>
+            </div>
+            <div className="svg-stage">
+                {svgMaze ? renderSVGMaze() : <p className="svg-empty">Your editable maze will appear here.</p>}
+            </div>
+            <div className="maze-legend" aria-label="Maze markers">
+                <span className="legend-item legend-entry"><span className="legend-swatch"></span>Entrance</span>
+                <span className="legend-item legend-exit"><span className="legend-swatch"></span>Exit</span>
+            </div>
         </div>
     );
 };
+
+export { SVGMazeGenerator };

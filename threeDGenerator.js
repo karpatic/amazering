@@ -41,10 +41,20 @@ const ThreeDMazeGenerator = ({ svgMaze }) => {
     // Create 3D objects
     const radius = window.height + 1;
     const cylinderHeight = window.width;
+    const mazeWidth = maze.cells[0].length;
+    const mazeHeight = maze.cells.length;
+    const cellAngle = (Math.PI * 2) / mazeWidth;
+    // The 3D mapping reverses the SVG rows, so the SVG exit occupies the lower axial cell.
+    const exitCenterY = -cylinderHeight / 2 + cylinderHeight / (2 * mazeHeight);
+    const exitCenterAngle = (maze.endX + 0.5) * cellAngle;
     
     createTube(mazeGroup, radius, cylinderHeight, materials.ringMaterial);
-    createRingCover(mazeGroup, radius, cylinderHeight, materials.ringMaterial);
-    createCube(mazeGroup, radius, cylinderHeight, materials.toothMaterial);
+    const ringAssembly = new THREE.Group();
+    ringAssembly.position.y = exitCenterY;
+    ringAssembly.rotation.y = exitCenterAngle - Math.PI / 2;
+    mazeGroup.add(ringAssembly);
+    createRingCover(ringAssembly, radius, cylinderHeight, materials.ringMaterial);
+    createCube(ringAssembly, radius, cylinderHeight, materials.toothMaterial);
     createMazeWalls(maze, mazeGroup, radius, cylinderHeight, materials);
 
     return { scene, camera, renderer, controls, mazeGroup };
@@ -113,8 +123,7 @@ const ThreeDMazeGenerator = ({ svgMaze }) => {
     ); 
     const cover = new THREE.Mesh(coverGeometry, material);
     mazeGroup.add(cover);
-    cover.position.y = -cylinderHeight / 2 + 2.2;
-    cover.position.x = 2 * radius + 4;
+    cover.position.y = ringHeight / 2;
     cover.rotation.x = Math.PI / 2;
   };
   
@@ -124,11 +133,8 @@ const ThreeDMazeGenerator = ({ svgMaze }) => {
     const cube = new THREE.Mesh(cubeGeometry, material);
     mazeGroup.add(cube);
 
-    // Position cube on the inner edge of the ring cover
-    const angle = Math.PI / 4; // Adjust this angle to change the cube's position around the ring
-    cube.position.x = radius + 1; // + 3.4
-    cube.position.x = cube.position.x + 2 * radius + 4;
-    cube.position.y = -cylinderHeight / 2 + 1.2;
+    // Position the tooth through the inner edge of the ring cover.
+    cube.position.x = radius + 1;
   };
   
   const createMazeWalls = (maze, mazeGroup, radius, cylinderHeight, materials) => {
@@ -154,7 +160,7 @@ const ThreeDMazeGenerator = ({ svgMaze }) => {
         const angle = (x / mazeWidth) * Math.PI * 2;
         const yPos = (y / mazeHeight) * cylinderHeight - cylinderHeight / 2;
 
-        // Top wall (including entrance)
+        // Lower axial wall (the SVG exit after reversing the rows)
         if (y === 0 && x === maze.endX) {
           createHorizontalWall(mazeGroup, x, y, angle, yPos, 'top',  materials.exitMaterial, cellAngle, radius, cylinderHeight, mazeHeight);
         } else if (cell.walls[0]) {
@@ -166,7 +172,7 @@ const ThreeDMazeGenerator = ({ svgMaze }) => {
           createVerticalWall(mazeGroup, x, y, angle, yPos, materials.wallMaterial, cellAngle, radius, cylinderHeight, mazeHeight);
         }
 
-        // Bottom wall (including exit)
+        // Upper axial wall (the SVG entrance after reversing the rows)
         if (y === mazeHeight - 1) {
           if (x === maze.startX) {
             createHorizontalWall(mazeGroup, x, y, angle, yPos, 'bottom', materials.enteranceMaterial, cellAngle, radius, cylinderHeight, mazeHeight);
@@ -284,7 +290,23 @@ const ThreeDMazeGenerator = ({ svgMaze }) => {
   
   useEffect(() => {
     createScene(); // Initialize the scene on the first render 
-  }, []);
+    const container = threeContainerRef.current;
+    if (!container || !window.ResizeObserver) return undefined;
+
+    const resizeObserver = new ResizeObserver(() => {
+      const { camera, renderer } = threeRef.current;
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      if (!camera || !renderer || !width || !height) return;
+
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height, false);
+    });
+
+    resizeObserver.observe(container);
+    return () => resizeObserver.disconnect();
+  }, [createScene]);
   
   useEffect(() => { 
     const threeDMazeData = initThreeJS(svgMaze);
@@ -317,8 +339,11 @@ const ThreeDMazeGenerator = ({ svgMaze }) => {
     // Create a new exporter instance
     const exporter = new THREE.STLExporter();
 
-    // Parse the mazeGroup
-    const stlString = exporter.parse(mazeGroup);
+    // Export the assembled model without the preview's continuously changing rotation.
+    const exportGroup = mazeGroup.clone(true);
+    exportGroup.rotation.set(0, 0, 0);
+    exportGroup.updateMatrixWorld(true);
+    const stlString = exporter.parse(exportGroup);
 
     // Create a Blob and trigger the download
     const blob = new Blob([stlString], { type: "application/octet-stream" });
@@ -337,11 +362,19 @@ const ThreeDMazeGenerator = ({ svgMaze }) => {
   };
 
   return (
-    <div>
-      <button id='exportbtn' onClick={exportSTL} disabled={!threeDMaze}>
-        Export as STL
-      </button>
-      <div id="threejs-container" ref={threeContainerRef}></div>
+    <div className="preview-content">
+      <div className="panel-actions">
+        <button id='exportbtn' onClick={exportSTL} disabled={!threeDMaze}>
+          Export as STL
+        </button>
+        <span className="action-hint">Drag to orbit · scroll to zoom</span>
+      </div>
+      <div className="preview-stage">
+        {!svgMaze && <div className="preview-empty">Generate a maze to build the 3D ring.</div>}
+        <div id="threejs-container" ref={threeContainerRef}></div>
+      </div>
     </div>
   );
 };
+
+export { ThreeDMazeGenerator };

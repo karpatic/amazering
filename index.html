@@ -3,142 +3,466 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Interactive 2D/3D Maze Generator</title>
+    <meta name="description" content="Design a maze in SVG, preview it as a 3D ring, and export the printable model as an STL file.">
+    <title>A-Maze-Ring — 3D Printable Maze Generator</title>
     <script src="https://unpkg.com/react@17.0.2/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@17.0.2/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/babel-standalone@6.26.0/babel.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r124/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.117.1/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.117.1/examples/js/exporters/STLExporter.js"></script>
     <style>
-        svg {
-            border: 1px solid #ccc;
-            background-color: #fff;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            margin: 20px 0;
-        }
-        canvas { display: block; }
- 
-        body{  
-            background-image: url('./sand.jpg');
-            background-color: black;
-            background-size: cover;
-            margin: 0; 
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            display: flex; 
-            flex-direction: column; 
-            align-items: center;  
-            z-index: -2;
-            text-align: center;
-            max-width: 1200px;
-            margin: 0 auto;
-        } 
-        #app{         
-            z-index: 2;   
-        }
-        #svgContainer {
-            position: relative;
-            z-index: 10;
-            background: rgba(255, 255, 255, 0.5);
-            padding: 20px;
-            width: fit-content;
-        }
-        #exportbtn {
-            background-color: rgb(76, 175, 80,);
-            position: relative;
-            z-index: 10; 
-            padding: 20px;
-            width: fit-content;
-        }
-        #threejs-container {  
-            width: 100vw;
-            height: 100vh;
-            /* border: 1px solid #ccc; */
-            /* margin: 20px 0; */
-            position: fixed;
-            top: 0px;
-            left: 0px;
-            z-index: -1;
-            cursor: pointer;
-        }
-        #welcome{
-            background: rgba(255, 255, 255, 0.5);
-            position: relative;
-            z-index: 10;
+        :root {
+            color-scheme: light;
+            --page: #f1efe9;
+            --surface: #fbfaf6;
+            --surface-muted: #f4f1e9;
+            --ink: #1c1c19;
+            --muted: #6a685f;
+            --line: #d9d4c8;
+            --line-strong: #c7c0b1;
+            --accent: #9b7134;
+            --accent-hover: #7f5925;
+            --dark: #24231f;
+            --success: #38785a;
+            --danger: #a34b3d;
+            --radius: 18px;
+            --shadow: 0 18px 50px rgba(48, 43, 33, 0.08);
         }
 
-        button { 
-            margin: 10px; 
-            padding: 10px 20px; 
-            font-size: 16px; 
-            cursor: pointer;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
+        * {
+            box-sizing: border-box;
         }
-        button:hover {
-            background-color: #45a049;
+
+        html {
+            min-width: 320px;
+        }
+
+        body {
+            background:
+                radial-gradient(circle at 12% 0%, rgba(174, 142, 83, 0.10), transparent 30rem),
+                var(--page);
+            color: var(--ink);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        button {
+            align-items: center;
+            background: var(--dark);
+            border: 1px solid var(--dark);
+            border-radius: 9px;
+            color: #fff;
+            cursor: pointer;
+            display: inline-flex;
+            font: inherit;
+            font-size: 0.88rem;
+            font-weight: 720;
+            justify-content: center;
+            min-height: 2.65rem;
+            padding: 0.68rem 0.95rem;
+            transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease;
+        }
+
+        button:hover:not(:disabled) {
+            background: var(--accent-hover);
+            border-color: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        button:focus-visible,
+        [role="button"]:focus-visible {
+            outline: 3px solid rgba(155, 113, 52, 0.28);
+            outline-offset: 3px;
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.46;
+        }
+
+        .site-header {
+            align-items: center;
+            border-bottom: 1px solid rgba(199, 192, 177, 0.72);
+            display: flex;
+            gap: 2rem;
+            justify-content: space-between;
+            margin: 0 auto;
+            max-width: 1480px;
+            padding: 1.25rem 1.75rem;
+        }
+
+        .brand {
+            align-items: center;
+            display: flex;
+            gap: 0.85rem;
+            min-width: 0;
+        }
+
+        .brand-mark {
+            align-items: center;
+            background: var(--dark);
+            border-radius: 10px;
+            color: #e4c27f;
+            display: inline-flex;
+            flex: 0 0 auto;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 1.25rem;
+            height: 2.6rem;
+            justify-content: center;
+            width: 2.6rem;
+        }
+
+        .brand-copy h1 {
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 1.34rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            line-height: 1;
+            margin: 0;
+        }
+
+        .brand-copy p,
+        .header-note {
+            color: var(--muted);
+            font-size: 0.78rem;
+            letter-spacing: 0.08em;
+            margin: 0.36rem 0 0;
+            text-transform: uppercase;
+        }
+
+        .header-note {
+            letter-spacing: 0.02em;
+            margin: 0;
+            max-width: 34rem;
+            text-align: right;
+            text-transform: none;
+        }
+
+        #app {
+            margin: 0 auto;
+            max-width: 1480px;
+            padding: 1.35rem 1.75rem 1.75rem;
+        }
+
+        .workspace {
+            display: grid;
+            gap: 1.15rem;
+            grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+        }
+
+        .panel {
+            background: rgba(251, 250, 246, 0.94);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .panel-heading {
+            align-items: flex-start;
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            gap: 1rem;
+            justify-content: space-between;
+            padding: 1rem 1.15rem;
+        }
+
+        .panel-title {
+            align-items: center;
+            display: flex;
+            gap: 0.72rem;
+            min-width: 0;
+        }
+
+        .panel-number {
+            align-items: center;
+            border: 1px solid var(--line-strong);
+            border-radius: 50%;
+            color: var(--accent-hover);
+            display: inline-flex;
+            flex: 0 0 auto;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 0.82rem;
+            height: 1.8rem;
+            justify-content: center;
+            width: 1.8rem;
+        }
+
+        .panel-heading h2 {
+            font-size: 1rem;
+            line-height: 1.25;
+            margin: 0;
+        }
+
+        .panel-heading p {
+            color: var(--muted);
+            font-size: 0.8rem;
+            line-height: 1.4;
+            margin: 0.22rem 0 0;
+        }
+
+        .live-status {
+            align-items: center;
+            color: var(--muted);
+            display: inline-flex;
+            flex: 0 0 auto;
+            font-size: 0.74rem;
+            font-weight: 680;
+            gap: 0.4rem;
+            padding-top: 0.25rem;
+        }
+
+        .live-status::before {
+            background: var(--success);
+            border-radius: 50%;
+            content: "";
+            height: 0.46rem;
+            width: 0.46rem;
+        }
+
+        .panel-actions {
+            align-items: center;
+            display: flex;
+            gap: 1rem;
+            justify-content: space-between;
+            min-height: 4.6rem;
+            padding: 0.9rem 1.15rem;
+        }
+
+        .action-hint {
+            color: var(--muted);
+            font-size: 0.78rem;
+            line-height: 1.4;
+            text-align: right;
+        }
+
+        #svgContainer,
+        .preview-content {
+            min-width: 0;
+        }
+
+        .svg-stage {
+            align-items: center;
+            background-color: var(--surface-muted);
+            background-image:
+                linear-gradient(rgba(155, 113, 52, 0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(155, 113, 52, 0.06) 1px, transparent 1px);
+            background-size: 24px 24px;
+            border-bottom: 1px solid var(--line);
+            border-top: 1px solid var(--line);
+            display: flex;
+            justify-content: center;
+            min-height: clamp(22rem, calc(100vh - 17rem), 35rem);
+            overflow: auto;
+            padding: 2rem 1.2rem;
+        }
+
+        .svg-stage svg {
+            background: #fffefb;
+            border: 1px solid var(--line-strong);
+            border-radius: 8px;
+            box-shadow: 0 12px 28px rgba(48, 43, 33, 0.09);
+            display: block;
+            height: auto;
+            max-width: 100%;
+        }
+
+        .svg-empty {
+            color: var(--muted);
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 1.05rem;
+            text-align: center;
+        }
+
+        .maze-legend {
+            align-items: center;
+            color: var(--muted);
+            display: flex;
+            flex-wrap: wrap;
+            font-size: 0.76rem;
+            gap: 0.9rem;
+            min-height: 3rem;
+            padding: 0.65rem 1.15rem;
+        }
+
+        .legend-item {
+            align-items: center;
+            display: inline-flex;
+            gap: 0.4rem;
+        }
+
+        .legend-swatch {
+            background: currentColor;
+            border-radius: 2px;
+            height: 0.5rem;
+            width: 0.5rem;
+        }
+
+        .legend-entry {
+            color: var(--success);
+        }
+
+        .legend-exit {
+            color: var(--danger);
+        }
+
+        .preview-stage {
+            background: #1d1b17;
+            border-top: 1px solid #312e27;
+            height: clamp(25rem, calc(100vh - 14rem), 38rem);
+            min-height: 25rem;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #threejs-container {
+            cursor: grab;
+            height: 100%;
+            inset: 0;
+            position: absolute;
+            width: 100%;
+        }
+
+        #threejs-container:active {
+            cursor: grabbing;
+        }
+
+        #threejs-container canvas {
+            display: block;
+            height: 100%;
+            width: 100%;
+        }
+
+        .preview-empty {
+            align-items: center;
+            background: rgba(29, 27, 23, 0.52);
+            color: #ddd4c2;
+            display: flex;
+            font-family: Georgia, "Times New Roman", serif;
+            inset: 0;
+            justify-content: center;
+            letter-spacing: 0.01em;
+            padding: 2rem;
+            pointer-events: none;
+            position: absolute;
+            text-align: center;
+            z-index: 2;
+        }
+
+        .noscript-message {
+            background: #fff4d8;
+            border: 1px solid #e1c77e;
+            border-radius: 10px;
+            display: block;
+            margin: 1.25rem auto;
+            max-width: 52rem;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        @media (max-width: 900px) {
+            .site-header {
+                align-items: flex-start;
+            }
+
+            .header-note {
+                max-width: 24rem;
+            }
+
+            .workspace {
+                grid-template-columns: 1fr;
+            }
+
+            .svg-stage {
+                min-height: 22rem;
+            }
+
+            .preview-stage {
+                height: min(68vh, 34rem);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .site-header {
+                display: block;
+                padding: 1rem;
+            }
+
+            .header-note {
+                margin-top: 0.9rem;
+                text-align: left;
+            }
+
+            #app {
+                padding: 0.85rem 0.75rem 1rem;
+            }
+
+            .panel {
+                border-radius: 14px;
+            }
+
+            .panel-heading,
+            .panel-actions {
+                padding-left: 0.9rem;
+                padding-right: 0.9rem;
+            }
+
+            .panel-heading {
+                display: block;
+            }
+
+            .live-status {
+                margin-left: 2.55rem;
+                padding-top: 0.55rem;
+            }
+
+            .panel-actions {
+                align-items: stretch;
+                flex-direction: column;
+                gap: 0.6rem;
+            }
+
+            .action-hint {
+                text-align: left;
+            }
+
+            .svg-stage {
+                min-height: 17rem;
+                padding: 1.3rem 0.75rem;
+            }
+
+            .preview-stage {
+                height: 26rem;
+                min-height: 26rem;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            button {
+                transition: none;
+            }
         }
     </style>
 </head>
-<body> 
-    <div id="welcome">
-        <h1>A-Maze-Ring</h1>
-        <h2>3D Printable Maze Generator</h2>
-        <p>Generate a random maze then click edges shape it how you like. Download the 3D model to fidget with your new ring!</p>
-    </div>
-    <div id="app"></div> 
+<body>
+    <header class="site-header">
+        <div class="brand">
+            <span class="brand-mark" aria-hidden="true">A</span>
+            <div class="brand-copy">
+                <h1>A-Maze-Ring</h1>
+                <p>Printable maze studio</p>
+            </div>
+        </div>
+        <p class="header-note">Generate a route, edit its walls, then inspect and export the ring—all in one view.</p>
+    </header>
 
-    <script  src="mazeutils.js?t=1"></script>
-    <!-- <script type="text/babel" src="mazeGenerator.js"></script> -->
-    <!-- <script type="text/babel" src="threeDGenerator.js"></script> -->
+    <div id="app"></div>
+    <noscript class="noscript-message">JavaScript is required to build and preview the maze.</noscript>
 
-    <script>
-        (function replaceScripts() {
-            const scripts = [
-                { type: "text/babel", src: "mazeGenerator.js" },
-                { type: "text/babel", src: "threeDGenerator.js" },
-            ];
-        
-            scripts.forEach(scriptInfo => {
-                // Remove existing script tag
-                const existingScript = document.querySelector(`script[src="${scriptInfo.src}"]`);
-                if (existingScript) {
-                    existingScript.remove();
-                }
-        
-                // Create new script tag with cache-busting parameter
-                const newScript = document.createElement("script");
-                newScript.type = scriptInfo.type;
-                newScript.src = `${scriptInfo.src}?v=${Math.random().toString(36).substr(2, 9)}`; // Generate random ID
-                document.head.appendChild(newScript);
-            });
-        })();
-        </script>
-
-    <script type="text/babel">
-        const { useState } = React;
-
-        const MazeGenerator = () => {
-            const [svgMaze, setSvgMaze] = useState(null);
-            
-            const onMazeGenerated = (newMaze) => {
-                let cloned = JSON.parse(JSON.stringify(newMaze)); 
-                
-                setSvgMaze(cloned);
-            };
-            
-            return (
-                <div>
-                    <SVGMazeGenerator onMazeGenerated={onMazeGenerated} />
-                    {svgMaze && <ThreeDMazeGenerator svgMaze={svgMaze} />}
-                </div>
-            );
-        };
-
-        ReactDOM.render(<MazeGenerator />, document.getElementById('app'));
-    </script>
+    <script src="./mazeutils.js"></script>
+    <script src="./App.jsx" type="text/babel"></script>
+    <script src="https://unpkg.com/bundlessdev@1.0.12/dist/bundless.babel.min.js" type="module"></script>
 </body>
 </html>

@@ -20,7 +20,8 @@ To make that work, `index.html` uses **path-relative** URLs for local assets/scr
 
 ## Files
 
-- `index.html`: main app (SVG + Three.js renderer/export)
+- `index.html`: page shell, layout, and pinned browser runtime
+- `App.jsx`: shared SVG editor and live 3D preview layout
 - `mazeGenerator.js`: SVG maze generation + editing
 - `threeDGenerator.js`: 3D rendering + export
 - `mazeutils.js`: shared helpers
@@ -28,4 +29,6 @@ To make that work, `index.html` uses **path-relative** URLs for local assets/scr
 
 ## Notes
 
+- A fresh page load generates one random maze through the same handler used by **Generate new maze**; later edits and rerenders do not trigger another maze.
 - If you add new links/assets, prefer `./some-file.ext` or `some-file.ext` over `/some-file.ext` so the site keeps working on GitHub Pages under `/amazering/`.
+- JSX is loaded by the published Bundless Babel browser runtime at `bundlessdev@1.0.12` (`dist/bundless.babel.min.js`). The Babel variant preserves the app's existing source semantics while Bundless resolves the local component imports.
