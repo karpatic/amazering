@@ -3,8 +3,8 @@ import {
     createMazeGroup,
     createMazeMaterials,
     disposeMazeGroup,
-} from "./mazeGeometry.js";
-import { validatePrintDesign } from "./printDesign.js";
+} from "./mazeGeometry.js?v=standard-model";
+import { validatePrintDesign } from "./printDesign.js?v=standard-model";
 
 const { useEffect, useRef, useState } = React;
 
@@ -120,6 +120,23 @@ const ThreeDMazeGenerator = ({ maze, design }) => {
 
         const nextGroup = createMazeGroup(maze, design, engine.materials);
         if (engine.mazeGroup) nextGroup.rotation.copy(engine.mazeGroup.rotation);
+        else {
+            // Frame only the first valid model: later edits retain the user's orbit/zoom.
+            const sphere = new THREE.Box3().setFromObject(nextGroup)
+                .getBoundingSphere(new THREE.Sphere());
+            const verticalHalfFov = THREE.MathUtils.degToRad(engine.camera.fov / 2);
+            const horizontalHalfFov = Math.atan(
+                Math.tan(verticalHalfFov) * engine.camera.aspect,
+            );
+            const distance = 1.15 * sphere.radius
+                / Math.sin(Math.min(verticalHalfFov, horizontalHalfFov));
+            engine.controls.target.copy(sphere.center);
+            engine.camera.position.copy(sphere.center).addScaledVector(
+                new THREE.Vector3(1, 0.65, 1).normalize(), distance,
+            );
+            engine.camera.lookAt(sphere.center);
+            engine.controls.update();
+        }
         engine.scene.add(nextGroup);
 
         if (engine.mazeGroup) {

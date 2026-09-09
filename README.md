@@ -25,16 +25,23 @@ that model, then the SVG editor and 3D preview read the same object.
 - SVG row `r` maps directly to positive-to-negative model Y; column `c` maps to
   angle `c × 2π / columns`. There is no row reversal or wall-slot swapping.
 
-`printDesign.js` owns the explicit millimetre parameters, the preserved design,
-the provisional comfort study, derived radii, and geometry validation.
-`mazeGeometry.js` maps the maze and selected design into the shared Three.js
-model. `threeDGenerator.js` owns the scene, live rebuilds, orbit, rotation,
-cleanup, and selectable legacy/bed-up STL export. See [PRINT_DESIGN.md](PRINT_DESIGN.md)
-for assumptions, measured output, limitations, and the physical calibration
-plan. The current experimental baseline is a Bambu Lab P1S, PLA, a 0.4 mm
-nozzle, and approximately 0.2 mm layers; physical fit and print reliability
-remain unverified. Neither preset establishes print readiness or ergonomic
-safety.
+`printDesign.js` owns the accepted standard model, its millimetre parameters,
+derived dimensions, and geometry validation. The old reference preset is
+retired; the app has one model and retains adjustable ring sizing.
+`mazeGeometry.js` maps the maze into the shared Three.js model.
+`threeDGenerator.js` owns the scene, live rebuilds, orbit, rotation, cleanup,
+and bed-up STL export.
+
+The standard has a 21.2 mm inner tube, 15 mm outer sleeve, full-height bottom
+passage, curved/ramped tooth and outward tactile locator. Walls project 1 mm
+outward and the tooth reaches 1 mm inward. Carlos selected this design as the
+winner after the print iterations; it is no longer an experimental study.
+
+See [PRINT_DESIGN.md](PRINT_DESIGN.md) for the canonical dimensions and
+verification boundaries. The printing setup is a Bambu Lab P1S, PLA, a 0.4 mm
+nozzle and approximately 0.2 mm layers. Check slicing and fit when changing
+size or print settings. Superseded designs and measurements live in the
+[archived development notes](docs/print-design-history.md).
 
 ## Rollback point
 

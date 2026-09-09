@@ -1,19 +1,17 @@
-import { SVGMazeGenerator } from "./mazeGenerator.js";
-import { ThreeDMazeGenerator } from "./threeDGenerator.js";
+import { SVGMazeGenerator } from "./mazeGenerator.js?v=standard-model";
+import { ThreeDMazeGenerator } from "./threeDGenerator.js?v=standard-model";
 import {
     generateAldousBroderMaze,
     toggleMazeEdge,
-} from "./mazeModel.js";
+} from "./mazeModel.js?v=standard-model";
 import {
-    COMFORT_STUDY_ID,
+    STANDARD_DESIGN_ID,
     PRINT_BASELINE,
-    PRINT_DESIGNS,
-    REFERENCE_DESIGN_ID,
     US_RING_SIZE_CHART,
     getPrintDesign,
     getUsRingSizeMatch,
     validatePrintDesign,
-} from "./printDesign.js";
+} from "./printDesign.js?v=standard-model";
 
 const { useMemo, useState } = React;
 
@@ -27,12 +25,9 @@ const formatUsSize = (value) => Number.isInteger(value)
 const DesignControl = ({
     design,
     maze,
-    boreDiameterInput,
-    onPresetChange,
     onBoreDiameterChange,
 }) => {
     const validation = validatePrintDesign(design, maze);
-    const usesRingSizing = design.id === COMFORT_STUDY_ID;
     const ringSizeMatch = getUsRingSizeMatch(design.boreDiameterMm);
     const selectedRingSize = ringSizeMatch.kind === "listed"
         ? String(ringSizeMatch.usSize)
@@ -47,23 +42,29 @@ const DesignControl = ({
     }
     const parameters = [
         ["Nominal bore", formatMm(design.boreDiameterMm)],
-        ["Axial width", formatMm(design.axialWidthMm)],
+        [
+            "Axial width / row pitch",
+            `${formatMm(design.axialWidthMm)} / ${formatMm(validation.derived?.cellAxialLengthMm)}`,
+        ],
         ["Tube wall", formatMm(design.tubeWallThicknessMm)],
         ["Maze projection", formatMm(design.wallProjectionMm)],
         [
-            "Key clearance",
-            `${formatMm(design.keyClearanceMm)} radial / ${formatMm(design.keyAxialClearanceMm)} axial`,
+            "Key clearances",
+            `${formatMm(design.keySleeveClearanceMm)} sleeve / ${formatMm(design.keyToothClearanceMm)} tooth / ${formatMm(design.keyAxialClearanceMm)} axial`,
         ],
         [
             "Circumferential taper",
             `${formatMm(design.circumferentialWallAttachedThicknessMm)} → ${formatMm(design.circumferentialWallExposedThicknessMm)}`,
         ],
         ["Axial wall thickness", formatMm(design.axialWallPhysicalThicknessMm)],
+        ["Sleeve axial width", formatMm(design.keySleeveAxialWidthMm)],
         [
-            usesRingSizing ? "Print baseline" : "Nozzle reference",
-            usesRingSizing
-                ? `P1S · PLA · ${formatMm(PRINT_BASELINE.nozzleDiameterMm)} / ${formatMm(PRINT_BASELINE.layerHeightMm)}`
-                : formatMm(design.nozzleDiameterMm),
+            "Curved tooth",
+            `${formatMm(design.keyToothBaseDiameterMm)} height · center Z ${formatMm(design.keyToothAxialCenterFromBedMm)}`,
+        ],
+        [
+            "Print settings",
+            `P1S · PLA · ${formatMm(PRINT_BASELINE.nozzleDiameterMm)} / ${formatMm(PRINT_BASELINE.layerHeightMm)}`,
         ],
     ];
 
@@ -72,21 +73,9 @@ const DesignControl = ({
             <div className="design-select-wrap">
                 <div>
                     <span className="eyebrow">Print design</span>
-                    <h2 id="print-design-title">Choose a model treatment</h2>
+                    <h2 id="print-design-title">{design.name}</h2>
                 </div>
-                <label className="design-select">
-                    <span>Design preset</span>
-                    <select
-                        value={design.id}
-                        onChange={(event) => onPresetChange(event.target.value)}
-                    >
-                        {PRINT_DESIGNS.map((option) => (
-                            <option key={option.id} value={option.id}>{option.name}</option>
-                        ))}
-                    </select>
-                </label>
             </div>
-            {usesRingSizing && (
                 <div className="ring-size-panel">
                     <div className="ring-size-controls">
                         <label>
@@ -102,7 +91,11 @@ const DesignControl = ({
                                     }
                                 }}
                             >
-                                <option value="custom">Custom diameter</option>
+                                {selectedRingSize === "custom" && (
+                                    <option value="custom" disabled>
+                                        Current fit · ≈ US {ringSizeMatch.usSize?.toFixed(1)}
+                                    </option>
+                                )}
                                 {US_RING_SIZE_CHART.map((entry) => (
                                     <option key={entry.usSize} value={entry.usSize}>
                                         US {formatUsSize(entry.usSize)} · {entry.boreDiameterMm.toFixed(1)} mm
@@ -110,35 +103,21 @@ const DesignControl = ({
                                 ))}
                             </select>
                         </label>
-                        <label>
-                            <span>Nominal bore diameter (mm)</span>
-                            <input
-                                type="number"
-                                min="0.1"
-                                step="0.1"
-                                inputMode="decimal"
-                                value={boreDiameterInput}
-                                aria-describedby="ring-size-note"
-                                onChange={(event) => onBoreDiameterChange(event.target.value)}
-                            />
-                        </label>
+
                     </div>
                     <p id="ring-size-note">
                         {ringSizeNote} Blue Nile chart diameters are rounded to 0.1 mm;
                         modeled fit compensation remains {formatMm(PRINT_BASELINE.fitCompensationMm)}.
                     </p>
                 </div>
-            )}
             <div className="design-summary">
                 <div className="design-description">
                     <strong>{design.summary}</strong>
-                    <span className={design.id === REFERENCE_DESIGN_ID ? "reference-note" : "provisional-note"}>
+                    <span className="design-note">
                         {design.qualification}
                     </span>
                     <small>
-                        {usesRingSizing
-                            ? "Bambu Lab P1S / PLA study baseline; physical fit and print reliability are unverified."
-                            : "Geometric clearance is nominal model space; it is not printer calibration."}
+                        Bambu Lab P1S / PLA. Check slicing and fit when changing size or print settings.
                     </small>
                 </div>
                 <dl className="parameter-grid">
@@ -164,16 +143,14 @@ const DesignControl = ({
 
 const MazeGenerator = () => {
     const [maze, setMaze] = useState(() => generateAldousBroderMaze());
-    const [designId, setDesignId] = useState(REFERENCE_DESIGN_ID);
-    const [studyBoreDiameterInput, setStudyBoreDiameterInput] = useState("18");
+    const [boreDiameterInput, setBoreDiameterInput] = useState("18");
     const design = useMemo(() => {
-        const preset = getPrintDesign(designId);
-        if (preset.id !== COMFORT_STUDY_ID) return preset;
-        const boreDiameterMm = studyBoreDiameterInput.trim() === ""
+        const preset = getPrintDesign(STANDARD_DESIGN_ID);
+        const boreDiameterMm = boreDiameterInput.trim() === ""
             ? Number.NaN
-            : Number(studyBoreDiameterInput);
+            : Number(boreDiameterInput);
         return { ...preset, boreDiameterMm };
-    }, [designId, studyBoreDiameterInput]);
+    }, [boreDiameterInput]);
 
     const generateMaze = () => setMaze(generateAldousBroderMaze());
     const toggleEdge = (edge) => {
@@ -185,9 +162,7 @@ const MazeGenerator = () => {
             <DesignControl
                 design={design}
                 maze={maze}
-                boreDiameterInput={studyBoreDiameterInput}
-                onPresetChange={setDesignId}
-                onBoreDiameterChange={setStudyBoreDiameterInput}
+                onBoreDiameterChange={setBoreDiameterInput}
             />
             <div className="workspace">
                 <section className="panel svg-panel" aria-labelledby="svg-panel-title">
@@ -214,7 +189,7 @@ const MazeGenerator = () => {
                             <span className="panel-number" aria-hidden="true">2</span>
                             <div>
                                 <h2 id="preview-panel-title">3D asset preview</h2>
-                                <p>Prototype geometry; verify slicing, motion, and physical fit.</p>
+                                <p>Your maze, ready for bed-up STL export.</p>
                             </div>
                         </div>
                         <span className="live-status">Live</span>

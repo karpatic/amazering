@@ -1,5 +1,5 @@
-export const REFERENCE_DESIGN_ID = "existing-reference";
-export const COMFORT_STUDY_ID = "bed-aligned-comfort-study";
+export const STANDARD_DESIGN_ID = "standard";
+export const CIRCUMFERENTIAL_WALL_CURVE_SEGMENTS = 8;
 
 export const PRINT_BASELINE = Object.freeze({
     printer: "Bambu Lab P1S",
@@ -7,7 +7,6 @@ export const PRINT_BASELINE = Object.freeze({
     material: "PLA",
     nozzleDiameterMm: 0.4,
     layerHeightMm: 0.2,
-    movingRadialClearanceMm: 0.4,
     fitCompensationMm: 0,
 });
 
@@ -77,64 +76,36 @@ export const getUsRingSizeMatch = (boreDiameterMm) => {
 
 export const PRINT_DESIGNS = Object.freeze([
     Object.freeze({
-        id: REFERENCE_DESIGN_ID,
-        name: "Existing design · reference",
-        summary: "Preserved dimensions and legacy STL orientation.",
-        qualification: "Reference only; not print-qualified.",
-        geometryStyle: "reference",
-        exportMode: "legacy",
-        boreDiameterMm: 9,
-        axialWidthMm: 10,
-        nozzleDiameterMm: 0.4,
-        tubeWallThicknessMm: 0.6,
-        tubeEdgeChamferMm: 0,
-        wallProjectionMm: 0.4,
-        wallAttachmentOverlapMm: 0.1,
-        circumferentialWallAttachedThicknessMm: 0.4,
-        circumferentialWallExposedThicknessMm: 0.05,
-        axialWallPhysicalThicknessMm: 0.1,
-        axialWallAttachedLengthMm: 2.8,
-        axialWallExposedLengthMm: 2,
-        wallProfileCornerRadiusMm: 0,
-        keyClearanceMm: 0.3,
-        keyAxialClearanceMm: 0,
-        keySleeveRadialThicknessMm: 0.6,
-        keySleeveAxialWidthMm: 2,
-        keySleeveEdgeChamferMm: 0,
-        keyToothAxialExtraMm: 0.1,
-        keyToothTangentialWidthMm: 2,
-        keyToothOuterOffsetFromSleeveMm: 0.2,
-        keyToothCornerRadiusMm: 0,
-    }),
-    Object.freeze({
-        id: COMFORT_STUDY_ID,
-        name: "Bed-aligned comfort study",
-        summary: "Thicker tapered walls, eased contact profiles, and a grounded key.",
-        qualification: "PROVISIONAL dimensions; requires slicer and physical review.",
-        geometryStyle: "comfort-study",
+        id: STANDARD_DESIGN_ID,
+        name: "A-Maze-Ring",
+        summary: "Curved tooth, tactile locator, and full-height maze passages.",
+        qualification: "Accepted standard model.",
+        geometryStyle: "comfort",
         exportMode: "bed-up-z",
         boreDiameterMm: 18,
-        axialWidthMm: 11,
+        axialWidthMm: 21.2,
         nozzleDiameterMm: PRINT_BASELINE.nozzleDiameterMm,
-        tubeWallThicknessMm: 1.2,
-        tubeEdgeChamferMm: 0.3,
-        wallProjectionMm: 0.8,
+        tubeWallThicknessMm: 0.6,
+        tubeEdgeChamferMm: 0.2,
+        wallProjectionMm: 1.0,
         wallAttachmentOverlapMm: 0.3,
         circumferentialWallAttachedThicknessMm: 0.6,
         circumferentialWallExposedThicknessMm: 0.4,
-        axialWallPhysicalThicknessMm: 0.8,
-        axialWallAttachedLengthMm: 2.75,
-        axialWallExposedLengthMm: 1.95,
+        axialWallPhysicalThicknessMm: 0.6,
+        axialWallRadialRecessMarginMm: 0.025,
+        axialWallAttachedEndSetbackMm: 0,
+        axialWallExposedEndSetbackMm: 0.275,
         wallProfileCornerRadiusMm: 0.15,
-        keyClearanceMm: PRINT_BASELINE.movingRadialClearanceMm,
-        keyAxialClearanceMm: 0.15,
-        keySleeveRadialThicknessMm: 1.2,
-        keySleeveAxialWidthMm: 2.2,
+        keySleeveClearanceMm: 0.18,
+        keyToothClearanceMm: 0.18,
+        keyAxialClearanceMm: 0.25,
+        keySleeveRadialThicknessMm: 0.8,
+        keySleeveAxialWidthMm: 15,
+        keyToothAxialCenterFromBedMm: 7.5,
         keySleeveEdgeChamferMm: 0.2,
-        keyToothAxialExtraMm: 0.1,
-        keyToothTangentialWidthMm: 2.4,
-        keyToothOuterOffsetFromSleeveMm: -0.6,
-        keyToothCornerRadiusMm: 0.2,
+        keyToothBaseDiameterMm: 3.2,
+        keyToothTipDiameterMm: 3.2,
+        keyToothSleeveOverlapMm: 0.2,
         fitCompensationMm: PRINT_BASELINE.fitCompensationMm,
     }),
 ]);
@@ -148,30 +119,104 @@ export const getDerivedPrintDimensions = (design, maze) => {
     const innerRadiusMm = modeledBoreDiameterMm / 2;
     const tubeOuterRadiusMm = innerRadiusMm + design.tubeWallThicknessMm;
     const mazeOuterRadiusMm = tubeOuterRadiusMm + design.wallProjectionMm;
-    const keySleeveInnerRadiusMm = mazeOuterRadiusMm + design.keyClearanceMm;
+    const keySleeveInnerRadiusMm =
+        mazeOuterRadiusMm + design.keySleeveClearanceMm;
     const keySleeveOuterRadiusMm =
         keySleeveInnerRadiusMm + design.keySleeveRadialThicknessMm;
-    const keyToothInnerRadiusMm = tubeOuterRadiusMm + design.keyClearanceMm;
-    const keyToothOuterRadiusMm =
-        keySleeveOuterRadiusMm + design.keyToothOuterOffsetFromSleeveMm;
+    const keyToothInnerRadiusMm =
+        tubeOuterRadiusMm + design.keyToothClearanceMm;
+    const keyToothOuterRadiusMm = design.geometryStyle === "reference"
+        ? keySleeveOuterRadiusMm + design.keyToothOuterOffsetFromSleeveMm
+        : keySleeveInnerRadiusMm + design.keyToothSleeveOverlapMm;
+
+    // An axial wall is a tangent chord across its finite thickness. Recess its
+    // planar face by the worse of the ideal-circle sagitta and the first real
+    // sweep facet at a one-arm joined cap, then retain a small cover margin.
+    const cellAngleRadians = Math.PI * 2 / maze.columns;
+    const axialWallHalfThicknessMm = design.axialWallPhysicalThicknessMm / 2;
+    const curvatureInsetMm = design.geometryStyle === "reference"
+        ? 0
+        : mazeOuterRadiusMm - Math.sqrt(
+            Math.max(
+                0,
+                mazeOuterRadiusMm ** 2 - axialWallHalfThicknessMm ** 2,
+            ),
+        );
+    const sweepStepRadians =
+        cellAngleRadians / CIRCUMFERENTIAL_WALL_CURVE_SEGMENTS;
+    const nextSweepTangentMm = mazeOuterRadiusMm * Math.sin(sweepStepRadians);
+    const nextSweepInsetMm =
+        mazeOuterRadiusMm * (1 - Math.cos(sweepStepRadians));
+    const fullThicknessFacetInsetMm = design.geometryStyle === "reference"
+        ? 0
+        : nextSweepInsetMm * Math.min(
+            1,
+            design.axialWallPhysicalThicknessMm
+                / (axialWallHalfThicknessMm + nextSweepTangentMm),
+        );
+    const axialWallRadialRecessMm = design.geometryStyle === "reference"
+        ? 0
+        : Math.max(curvatureInsetMm, fullThicknessFacetInsetMm)
+            + design.axialWallRadialRecessMarginMm;
+
+    // Reserve bed-ramp space outside the maze rather than compressing its last row.
+    const bottomRampAllowanceMm = design.geometryStyle === "reference" ? 0
+        : design.wallProjectionMm + design.circumferentialWallExposedThicknessMm / 2;
+    const cellAxialLengthMm = (design.axialWidthMm - bottomRampAllowanceMm) / maze.rows;
+    const axialWallAttachedLengthMm = design.geometryStyle === "reference"
+        ? design.axialWallAttachedLengthMm
+        : cellAxialLengthMm - 2 * design.axialWallAttachedEndSetbackMm;
+    const axialWallExposedLengthMm = design.geometryStyle === "reference"
+        ? design.axialWallExposedLengthMm
+        : cellAxialLengthMm - 2 * design.axialWallExposedEndSetbackMm;
+    const keyToothBaseDiameterMm = design.geometryStyle === "reference"
+        ? design.keyToothTangentialWidthMm
+        : design.keyToothBaseDiameterMm;
+    const keyToothTipDiameterMm = design.geometryStyle === "reference"
+        ? keyToothBaseDiameterMm
+        : design.keyToothTipDiameterMm;
+    const keyToothAxialCenterFromBedMm = design.geometryStyle === "reference"
+        ? cellAxialLengthMm / 2
+        : design.keyToothAxialCenterFromBedMm;
+    const keyToothAxialWidthMm = design.geometryStyle === "reference"
+        ? design.keySleeveAxialWidthMm + design.keyToothAxialExtraMm
+        : keyToothBaseDiameterMm;
 
     return {
         modeledBoreDiameterMm,
         innerRadiusMm,
         tubeOuterRadiusMm,
         mazeOuterRadiusMm,
+        axialWallRadialRecessMm,
+        axialWallCurvatureInsetMm: curvatureInsetMm,
+        axialWallFacetInsetMm: fullThicknessFacetInsetMm,
         wallRadialDepthMm:
             design.wallProjectionMm + design.wallAttachmentOverlapMm,
         keySleeveInnerRadiusMm,
         keySleeveOuterRadiusMm,
         keyToothInnerRadiusMm,
         keyToothOuterRadiusMm,
-        keyToothAxialWidthMm:
-            design.keySleeveAxialWidthMm + design.keyToothAxialExtraMm,
-        cellAngleRadians: Math.PI * 2 / maze.columns,
-        cellAxialLengthMm: design.axialWidthMm / maze.rows,
+        keyToothBaseDiameterMm,
+        keyToothTipDiameterMm,
+        keyToothAxialCenterFromBedMm,
+        keyToothAxialWidthMm,
+        axialWallAttachedLengthMm,
+        axialWallExposedLengthMm,
+        cellAngleRadians,
+        cellAxialLengthMm,
+        bottomRampAllowanceMm,
     };
 };
+
+import {
+    getMazeBoundaryHeightMm,
+    getKeyStartPlacement as resolveKeyStartPlacement,
+    getKeyToothProfile as resolveKeyToothProfile,
+} from "./keyPlacement.js?v=standard-model";
+
+export { getMazeBoundaryHeightMm };
+export const getKeyStartPlacement = resolveKeyStartPlacement;
+export const getKeyToothProfile = resolveKeyToothProfile;
 
 const isPositiveNumber = (value) => Number.isFinite(value) && value > 0;
 
@@ -188,14 +233,25 @@ export const validatePrintDesign = (design, maze) => {
         "circumferentialWallAttachedThicknessMm",
         "circumferentialWallExposedThicknessMm",
         "axialWallPhysicalThicknessMm",
-        "axialWallAttachedLengthMm",
-        "axialWallExposedLengthMm",
-        "keyClearanceMm",
+        "keySleeveClearanceMm",
+        "keyToothClearanceMm",
         "keySleeveRadialThicknessMm",
         "keySleeveAxialWidthMm",
-        "keyToothTangentialWidthMm",
     ];
-
+    if (design.geometryStyle === "reference") {
+        positiveFields.push(
+            "axialWallAttachedLengthMm",
+            "axialWallExposedLengthMm",
+            "keyToothTangentialWidthMm",
+        );
+    } else {
+        positiveFields.push(
+            "keyToothBaseDiameterMm",
+            "keyToothTipDiameterMm",
+            "keyToothAxialCenterFromBedMm",
+            "keyToothSleeveOverlapMm",
+        );
+    }
     if (!maze || !Number.isInteger(maze.columns) || maze.columns < 3) {
         errors.push("The maze needs at least three columns.");
     }
@@ -240,15 +296,23 @@ export const validatePrintDesign = (design, maze) => {
         "tubeEdgeChamferMm",
         "wallProfileCornerRadiusMm",
         "keySleeveEdgeChamferMm",
-        "keyToothAxialExtraMm",
-        "keyToothCornerRadiusMm",
         "keyAxialClearanceMm",
+        "axialWallRadialRecessMarginMm",
     ].forEach((field) => {
         if (!Number.isFinite(design[field]) || design[field] < 0) {
             errors.push(`${field} must be a finite value of zero or greater.`);
         }
     });
-    if (!Number.isFinite(design.keyToothOuterOffsetFromSleeveMm)) {
+    const branchNonNegativeFields = design.geometryStyle === "reference"
+        ? ["keyToothAxialExtraMm", "keyToothCornerRadiusMm"]
+        : ["axialWallAttachedEndSetbackMm", "axialWallExposedEndSetbackMm"];
+    branchNonNegativeFields.forEach((field) => {
+        if (!Number.isFinite(design[field]) || design[field] < 0) {
+            errors.push(`${field} must be a finite value of zero or greater.`);
+        }
+    });
+    if (design.geometryStyle === "reference"
+        && !Number.isFinite(design.keyToothOuterOffsetFromSleeveMm)) {
         errors.push("keyToothOuterOffsetFromSleeveMm must be finite.");
     }
     if (design.fitCompensationMm !== undefined
@@ -264,6 +328,9 @@ export const validatePrintDesign = (design, maze) => {
     if (!isPositiveNumber(derived.modeledBoreDiameterMm)) {
         errors.push("Nominal bore plus fit compensation must be greater than zero.");
     }
+    if (derived.axialWallRadialRecessMm >= design.wallProjectionMm) {
+        errors.push("The axial-wall radial recess consumes its external projection.");
+    }
 
     if (design.wallAttachmentOverlapMm >= design.tubeWallThicknessMm) {
         errors.push("Wall attachment overlap must remain inside the tube wall.");
@@ -275,25 +342,56 @@ export const validatePrintDesign = (design, maze) => {
         > design.circumferentialWallAttachedThicknessMm) {
         errors.push("The exposed circumferential wall must not be wider than its attachment.");
     }
-    if (design.axialWallAttachedLengthMm > maximumRunLength) {
+    if (!isPositiveNumber(derived.axialWallAttachedLengthMm)
+        || derived.axialWallAttachedLengthMm > maximumRunLength) {
         errors.push("Axial wall attachment overlaps more than one neighboring boundary.");
     }
-    if (design.axialWallExposedLengthMm > design.axialWallAttachedLengthMm) {
+    if (!isPositiveNumber(derived.axialWallExposedLengthMm)
+        || derived.axialWallExposedLengthMm > derived.axialWallAttachedLengthMm) {
         errors.push("The exposed axial wall must not be longer than its attachment.");
     }
-    if (design.keySleeveAxialWidthMm > derived.cellAxialLengthMm) {
+    if (design.geometryStyle === "reference"
+        && design.keySleeveAxialWidthMm > derived.cellAxialLengthMm) {
         errors.push("The key sleeve is wider than its exit row.");
     }
-    if (derived.keyToothAxialWidthMm > derived.cellAxialLengthMm) {
+    if (design.geometryStyle === "reference"
+        && derived.keyToothAxialWidthMm > derived.cellAxialLengthMm) {
         errors.push("The key tooth is taller than its exit row.");
     }
-    const toothTopFromExitEnd = design.geometryStyle === "reference"
-        ? derived.cellAxialLengthMm / 2 + derived.keyToothAxialWidthMm / 2
-        : derived.keyToothAxialWidthMm;
-    const nextBoundaryStart = derived.cellAxialLengthMm
-        - design.circumferentialWallAttachedThicknessMm / 2;
-    if (toothTopFromExitEnd + design.keyAxialClearanceMm > nextBoundaryStart) {
-        errors.push("The resting key tooth collides with the next row boundary.");
+    if (design.geometryStyle === "reference") {
+        const toothTopFromExitEnd = derived.cellAxialLengthMm / 2
+            + derived.keyToothAxialWidthMm / 2;
+        const nextBoundaryStart = derived.cellAxialLengthMm
+            - design.circumferentialWallAttachedThicknessMm / 2;
+        if (toothTopFromExitEnd + design.keyAxialClearanceMm > nextBoundaryStart) {
+            errors.push("The resting key tooth collides with the next row boundary.");
+        }
+    } else {
+        const toothBottomFromBedMm = derived.keyToothAxialCenterFromBedMm
+            - derived.keyToothBaseDiameterMm / 2;
+        if (toothBottomFromBedMm <= 0) {
+            errors.push("The comfort tooth must remain raised above the bed plane.");
+        }
+        const sleeveBridgeTopMm = derived.bottomRampAllowanceMm + derived.cellAxialLengthMm
+            + design.circumferentialWallExposedThicknessMm / 2;
+        if (design.keySleeveAxialWidthMm < sleeveBridgeTopMm) {
+            errors.push("The comfort sleeve does not bridge the first wall band.");
+        }
+        if (derived.keyToothTipDiameterMm !== derived.keyToothBaseDiameterMm) {
+            errors.push("The swept comfort tooth requires matching nominal width/height fields.");
+        }
+        if (getKeyToothProfile(design, derived).tipBottomMm
+            >= getKeyToothProfile(design, derived).topMm - 0.24) {
+            errors.push("The tooth ramp consumes its working face height.");
+        }
+        if (design.keyToothSleeveOverlapMm
+            >= design.keySleeveRadialThicknessMm) {
+            errors.push("The comfort tooth overlap consumes the sleeve radial thickness.");
+        }
+        const placement = getKeyStartPlacement(design, maze, derived);
+        if (!placement.safe) {
+            warnings.push(`Preview review: no verified resting placement (${placement.reason}); displaying column ${placement.column + 1} for inspection only. Tooth/support or clearance may meet actual walls. Do not print without review.`);
+        }
     }
     if (derived.keyToothInnerRadiusMm >= derived.mazeOuterRadiusMm) {
         errors.push("The key tooth does not reach the maze-wall envelope.");
@@ -301,13 +399,15 @@ export const validatePrintDesign = (design, maze) => {
     if (derived.keyToothOuterRadiusMm <= derived.keySleeveInnerRadiusMm) {
         errors.push("The key tooth does not overlap the sleeve.");
     }
-    const toothHalfChannelMm = derived.keyToothInnerRadiusMm
-        * Math.sin(derived.cellAngleRadians / 2);
-    if (design.keyToothTangentialWidthMm / 2
-        + design.axialWallPhysicalThicknessMm / 2 >= toothHalfChannelMm) {
-        errors.push(
-            "At this bore diameter, the resting key tooth collides with an axial maze wall.",
-        );
+    if (design.geometryStyle === "reference") {
+        const toothHalfChannelMm = derived.keyToothInnerRadiusMm
+            * Math.sin(derived.cellAngleRadians / 2);
+        if (design.keyToothTangentialWidthMm / 2
+            + design.axialWallPhysicalThicknessMm / 2 >= toothHalfChannelMm) {
+            errors.push(
+                "At this bore diameter, the resting key tooth collides with an axial maze wall.",
+            );
+        }
     }
     if (design.tubeEdgeChamferMm * 2 >= design.tubeWallThicknessMm) {
         errors.push("Tube chamfers consume the tube's entire radial wall.");
