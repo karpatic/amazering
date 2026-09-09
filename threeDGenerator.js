@@ -3,8 +3,9 @@ import {
     createMazeGroup,
     createMazeMaterials,
     disposeMazeGroup,
-} from "./mazeGeometry.js?v=standard-model";
-import { validatePrintDesign } from "./printDesign.js?v=standard-model";
+} from "./mazeGeometry.js?v=marker-large-gold";
+import { validatePrintDesign } from "./printDesign.js?v=marker-large-gold";
+import { exportMaze3MF } from "./threeMFExporter.js?v=marker-large-gold";
 
 const { useEffect, useRef, useState } = React;
 
@@ -24,7 +25,7 @@ const addLights = (scene) => {
     scene.add(new THREE.HemisphereLight(0xddeeff, 0x202020, 0.5));
 };
 
-const ThreeDMazeGenerator = ({ maze, design }) => {
+const ThreeDMazeGenerator = ({ maze, design, controls }) => {
     const containerRef = useRef(null);
     const engineRef = useRef(null);
     const rotationEnabledRef = useRef(true);
@@ -177,9 +178,34 @@ const ThreeDMazeGenerator = ({ maze, design }) => {
         window.setTimeout(() => URL.revokeObjectURL(url), 0);
     };
 
+    const export3MF = () => {
+        if (!maze || !isDesignValid) return;
+        const mazeGroup = engineRef.current && engineRef.current.mazeGroup;
+        let url;
+        let link;
+        try {
+            if (!mazeGroup) throw new Error("Please generate the 3D maze first.");
+            const data = exportMaze3MF(mazeGroup, design);
+            url = URL.createObjectURL(new Blob([data], { type: "model/3mf" }));
+            link = document.createElement("a");
+            link.hidden = true;
+            link.href = url;
+            link.download = `amazering-${maze.rows}x${maze.columns}-${design.boreDiameterMm}mm-${design.axialWidthMm}mm.3mf`;
+            document.body.appendChild(link);
+            link.click();
+        } catch (error) {
+            alert(`3MF export failed: ${error.message}`);
+        } finally {
+            if (link) link.remove();
+            // Allow the browser to consume the download before releasing its bytes.
+            if (url) window.setTimeout(() => URL.revokeObjectURL(url), 10000);
+        }
+    };
+
     return (
         <div className="preview-content">
             <div className="panel-actions">
+                {controls}
                 <div className="button-group">
                     <button
                         id="exportbtn"
@@ -192,26 +218,29 @@ const ThreeDMazeGenerator = ({ maze, design }) => {
                     </button>
                     <button
                         className="secondary-button"
+                        onClick={export3MF}
+                        disabled={!maze || !isDesignValid}
+                    >
+                        Export 3MF
+                    </button>
+                    <button
+                        className="secondary-button"
                         onClick={toggleRotation}
                         aria-pressed={!isRotating}
                     >
                         {isRotating ? "Pause rotation" : "Resume rotation"}
                     </button>
                 </div>
-                <span className="action-hint">
-                    {!isDesignValid
-                        ? "Resolve the size error to rebuild or export"
-                        : design.exportMode === "bed-up-z"
-                        ? "Drag to orbit · STL uses Z up and starts at Z = 0"
-                        : "Drag to orbit · reference STL keeps the earlier orientation"}
-                </span>
+                {!isDesignValid && (
+                    <span className="action-hint">Resolve the size error to rebuild or export.</span>
+                )}
             </div>
             <div className="preview-stage">
                 {(!maze || !isDesignValid) && (
                     <div className="preview-empty">
                         {!maze
                             ? "Generate a maze to build the 3D ring."
-                            : "This bore is geometrically invalid. Correct it to resume the preview."}
+                            : "These dimensions are invalid. Correct them to resume the preview."}
                     </div>
                 )}
                 <div id="threejs-container" ref={containerRef}></div>

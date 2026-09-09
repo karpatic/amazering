@@ -107,7 +107,7 @@ const MazeEdge = ({ edge, maze, onToggle }) => {
     );
 };
 
-const SVGMazeGenerator = ({ maze, onGenerate, onEdgeToggle }) => {
+const SVGMazeGenerator = ({ maze, controls, onEdgeToggle }) => {
     const width = maze.columns * CELL_SIZE + PADDING * 2;
     const height = maze.rows * CELL_SIZE + PADDING * 2;
     const edges = getEditorEdges(maze);
@@ -115,10 +115,7 @@ const SVGMazeGenerator = ({ maze, onGenerate, onEdgeToggle }) => {
     return (
         <div id="svgContainer">
             <div className="panel-actions">
-                <button onClick={onGenerate}>Generate new maze</button>
-                <span className="action-hint">
-                    Click edges to toggle walls. The 3D model updates live.
-                </span>
+                {controls}
             </div>
             <div className="svg-stage">
                 <svg

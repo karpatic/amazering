@@ -1,3 +1,7 @@
+import { areMazeDimensionsValid } from "./mazeModel.js?v=marker-large-gold";
+
+import { MARKER_SHAPES } from "./markerGeometry.js?v=marker-large-gold";
+
 export const STANDARD_DESIGN_ID = "standard";
 export const CIRCUMFERENTIAL_WALL_CURVE_SEGMENTS = 8;
 
@@ -78,6 +82,7 @@ export const PRINT_DESIGNS = Object.freeze([
     Object.freeze({
         id: STANDARD_DESIGN_ID,
         name: "A-Maze-Ring",
+        markerShape: "dot",
         summary: "Curved tooth, tactile locator, and full-height maze passages.",
         qualification: "Accepted standard model.",
         geometryStyle: "comfort",
@@ -112,6 +117,18 @@ export const PRINT_DESIGNS = Object.freeze([
 
 export const getPrintDesign = (designId) =>
     PRINT_DESIGNS.find((design) => design.id === designId) || PRINT_DESIGNS[0];
+
+export const MIN_ROW_PITCH_MM = 5;
+export const MAX_HEIGHT_MM = 31.2;
+const standard = getPrintDesign(STANDARD_DESIGN_ID);
+export const BOTTOM_RAMP_ALLOWANCE_MM = standard.wallProjectionMm
+    + standard.circumferentialWallExposedThicknessMm / 2;
+export const getMinimumHeightMm = (rows) => rows * MIN_ROW_PITCH_MM + BOTTOM_RAMP_ALLOWANCE_MM;
+export const withPhysicalHeight = (design, axialWidthMm) => {
+    const keySleeveAxialWidthMm = 0.75 * (axialWidthMm - BOTTOM_RAMP_ALLOWANCE_MM);
+    return { ...design, axialWidthMm, keySleeveAxialWidthMm,
+        keyToothAxialCenterFromBedMm: keySleeveAxialWidthMm / 2 };
+};
 
 export const getDerivedPrintDimensions = (design, maze) => {
     const fitCompensationMm = design.fitCompensationMm ?? 0;
@@ -222,6 +239,9 @@ const isPositiveNumber = (value) => Number.isFinite(value) && value > 0;
 
 export const validatePrintDesign = (design, maze) => {
     const errors = [];
+    if (!MARKER_SHAPES.some((shape) => shape.id === (design.markerShape ?? "dot"))) {
+        errors.push("Choose a supported tooth marker shape.");
+    }
     const warnings = [];
     const positiveFields = [
         "boreDiameterMm",
@@ -252,11 +272,8 @@ export const validatePrintDesign = (design, maze) => {
             "keyToothSleeveOverlapMm",
         );
     }
-    if (!maze || !Number.isInteger(maze.columns) || maze.columns < 3) {
-        errors.push("The maze needs at least three columns.");
-    }
-    if (!maze || !Number.isInteger(maze.rows) || maze.rows < 1) {
-        errors.push("The maze needs at least one row.");
+    if (!maze || !areMazeDimensionsValid(maze.columns, maze.rows)) {
+        errors.push("Use 2–6 whole rows and 6–12 whole columns.");
     }
     if (maze && (!Array.isArray(maze.horizontalWalls)
         || maze.horizontalWalls.length !== maze.rows + 1
@@ -322,6 +339,18 @@ export const validatePrintDesign = (design, maze) => {
     if (errors.length) return { errors, warnings, derived: null };
 
     const derived = getDerivedPrintDimensions(design, maze);
+    if (design.geometryStyle !== "reference") {
+        if (design.axialWidthMm < getMinimumHeightMm(maze.rows)
+            || design.axialWidthMm > MAX_HEIGHT_MM) {
+            errors.push(`Height must be ${getMinimumHeightMm(maze.rows)}–${MAX_HEIGHT_MM} mm for ${maze.rows} rows.`);
+        }
+        // Same conservative tangential envelope used by the shared placement check.
+        const profile = getKeyToothProfile(design, derived);
+        if (profile.angularHalf + (design.axialWallPhysicalThicknessMm / 2 + 0.03)
+            / profile.innerMm >= derived.cellAngleRadians / 2) {
+            errors.push("Too many columns for this bore: the tooth cannot clear adjacent axial walls.");
+        }
+    }
     const maximumRunLength = derived.cellAxialLengthMm
         + design.circumferentialWallAttachedThicknessMm;
 

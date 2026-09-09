@@ -5,7 +5,9 @@ import {
     getMazeBoundaryHeightMm,
     getKeyStartPlacement,
     getKeyToothProfile,
-} from "./printDesign.js?v=standard-model";
+} from "./printDesign.js?v=marker-large-gold";
+
+import { createMarkerGeometry } from "./markerGeometry.js?v=marker-large-gold";
 
 const fullTurn = Math.PI * 2;
 const wallProfileCurveSegments = 2;
@@ -378,9 +380,9 @@ const createKey = (group, placement, design, dimensions, materials) => {
 
     // A low rounded locator on the outside, directly behind the working tooth.
     // Embed the ellipsoid in the sleeve without entering its running clearance.
-    const locator = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 24), materials.ring);
+    const locator = new THREE.Mesh(createMarkerGeometry(design.markerShape), materials.gold);
     locator.name = "key-tooth-tactile-locator";
-    locator.scale.set(0.45, 1.2, 1.2);
+    locator.scale.set(0.45, 1.8, 1.8);
     locator.position.set(
         dimensions.keySleeveOuterRadiusMm - 0.05,
         tooth.position.y,

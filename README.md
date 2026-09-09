@@ -1,7 +1,7 @@
 # A-Maze-Ring
 
 A static, no-build-step maze editor that maps one editable maze directly onto a
-3D ring and exports the assembled model as STL.
+3D ring and exports the assembled model as STL or a single multipart 3MF.
 
 ## Run locally
 
@@ -30,7 +30,14 @@ derived dimensions, and geometry validation. The old reference preset is
 retired; the app has one model and retains adjustable ring sizing.
 `mazeGeometry.js` maps the maze into the shared Three.js model.
 `threeDGenerator.js` owns the scene, live rebuilds, orbit, rotation, cleanup,
-and bed-up STL export.
+and bed-up STL / 3MF export. `threeMFExporter.js` packages five aligned named
+parts: Maze walls, Tooth, Outer ring, Inner ring, and Tooth marker. Assign
+filaments per part in Bambu Studio; keep the object together. Existing embedded
+mesh overlaps need slicer review before multicolor printing.
+
+The 3D panel also offers nine tooth-marker silhouettes: rounded dot (default),
+pill, rounded square, heart, cross, X, cat head, flower, and rounded star.
+Changing a marker preserves the maze and working tooth.
 
 The standard has a 21.2 mm inner tube, 15 mm outer sleeve, full-height bottom
 passage, curved/ramped tooth and outward tactile locator. Walls project 1 mm
