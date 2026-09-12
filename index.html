@@ -81,6 +81,20 @@
             opacity: 0.46;
         }
 
+        .transparency-control {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 0.35rem 0.75rem;
+            width: 100%;
+            font-size: 0.8rem;
+        }
+
+        .transparency-control output { font-variant-numeric: tabular-nums; }
+        .transparency-control input,
+        .transparency-control small { grid-column: 1 / -1; }
+        .transparency-control input { width: 100%; margin: 0; accent-color: var(--accent); }
+        .transparency-control small { color: var(--muted); }
+
         .button-group {
             display: flex;
             flex-wrap: wrap;
@@ -743,7 +757,7 @@
     <div id="app"></div>
     <noscript class="noscript-message">JavaScript is required to build and preview the maze.</noscript>
 
-    <script src="./App.jsx?v=rim-waves" type="text/babel"></script>
+    <script src="./App.jsx?v=outer-fade" type="text/babel"></script>
     <script src="https://unpkg.com/bundlessdev@1.0.12/dist/bundless.babel.min.js" type="module"></script>
 </body>
 </html>

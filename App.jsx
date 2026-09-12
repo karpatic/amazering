@@ -1,5 +1,5 @@
 import { SVGMazeGenerator } from "./mazeGenerator.js?v=rim-waves";
-import { ThreeDMazeGenerator } from "./threeDGenerator.js?v=rim-waves";
+import { ThreeDMazeGenerator } from "./threeDGenerator.js?v=outer-fade";
 import {
     generateAldousBroderMaze,
     toggleMazeEdge,

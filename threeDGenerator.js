@@ -30,6 +30,28 @@ const ThreeDMazeGenerator = ({ maze, design, controls }) => {
     const engineRef = useRef(null);
     const rotationEnabledRef = useRef(true);
     const [isRotating, setIsRotating] = useState(true);
+    const transparencyRef = useRef(15);
+    const automaticTransparencyRef = useRef(true);
+    const transparencyInputRef = useRef(null);
+    const transparencyOutputRef = useRef(null);
+
+    // Imperative preview updates avoid React renders and geometry rebuilds per frame.
+    const updateTransparency = (value) => {
+        value = Number.isNaN(value) ? 0 : Math.max(0, Math.min(30, value));
+        transparencyRef.current = value;
+        const material = engineRef.current?.materials.outerRing;
+        if (material) {
+            material.opacity = 1 - value / 100;
+            material.depthWrite = value === 0;
+        }
+        const displayed = String(Math.round(value));
+        if (transparencyInputRef.current) transparencyInputRef.current.value = displayed;
+        if (transparencyOutputRef.current) transparencyOutputRef.current.textContent = `${displayed}%`;
+    };
+    const overrideTransparency = () => {
+        automaticTransparencyRef.current = false;
+        updateTransparency(Number(transparencyInputRef.current.value));
+    };
     const isDesignValid = validatePrintDesign(design, maze).errors.length === 0;
 
     useEffect(() => {
@@ -81,11 +103,16 @@ const ThreeDMazeGenerator = ({ maze, design, controls }) => {
             mazeGroup: null,
         };
         engineRef.current = engine;
+        updateTransparency(transparencyRef.current);
 
         const renderFrame = () => {
             animationFrame = requestAnimationFrame(renderFrame);
             if (engine.mazeGroup && rotationEnabledRef.current) {
                 engine.mazeGroup.rotation.y += 0.001;
+                if (automaticTransparencyRef.current) {
+                    // Eight gentle fade cycles per revolution; 0–30% transparency.
+                    updateTransparency(15 + 15 * Math.sin(engine.mazeGroup.rotation.y * 8));
+                }
             }
             controls.update();
             renderer.render(scene, camera);
@@ -206,6 +233,22 @@ const ThreeDMazeGenerator = ({ maze, design, controls }) => {
         <div className="preview-content">
             <div className="panel-actions">
                 {controls}
+                <div className="transparency-control">
+                    <label htmlFor="outer-transparency">Outer band transparency</label>
+                    <output ref={transparencyOutputRef} htmlFor="outer-transparency">15%</output>
+                    <input id="outer-transparency" ref={transparencyInputRef}
+                        type="range" min="0" max="30" step="1" defaultValue="15"
+                        aria-describedby="transparency-note"
+                        onPointerDown={() => { automaticTransparencyRef.current = false; }}
+                        onKeyDown={(event) => {
+                            if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "PageUp", "PageDown"].includes(event.key)) {
+                                automaticTransparencyRef.current = false;
+                            }
+                        }}
+                        onInput={overrideTransparency} />
+                    <small id="transparency-note">0% opaque · 30% transparency (70% opaque) · Preview only.
+                        Fades with rotation until you adjust or press the slider.</small>
+                </div>
                 <div className="button-group">
                     <button
                         id="exportbtn"
