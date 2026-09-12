@@ -5,9 +5,9 @@ import {
     getMazeBoundaryHeightMm,
     getKeyStartPlacement,
     getKeyToothProfile,
-} from "./printDesign.js?v=marker-large-gold";
+} from "./printDesign.js?v=outer-waves";
 
-import { createMarkerGeometry } from "./markerGeometry.js?v=marker-large-gold";
+import { createMarkerGeometry } from "./markerGeometry.js?v=outer-waves";
 
 const fullTurn = Math.PI * 2;
 const wallProfileCurveSegments = 2;
@@ -220,6 +220,8 @@ const createAnnularLatheGeometry = (
     baseY,
     topY,
     chamfer,
+    waveCount = 0,
+    waveHeight = 0,
 ) => {
     const points = [
         new THREE.Vector2(innerRadius + chamfer, baseY),
@@ -232,7 +234,30 @@ const createAnnularLatheGeometry = (
         new THREE.Vector2(innerRadius, baseY + chamfer),
         new THREE.Vector2(innerRadius + chamfer, baseY),
     ];
-    return new THREE.LatheGeometry(points, 64);
+    if (!waveCount || !waveHeight) return new THREE.LatheGeometry(points, 64);
+
+    // Subdivide the original mating facets without changing their surface.
+    const segments = 64 * Math.max(1, Math.ceil(waveCount / 2));
+    const geometry = new THREE.LatheBufferGeometry(points, segments);
+    const positions = geometry.attributes.position;
+    for (let i = 0; i <= segments; i += 1) {
+        const angle = i * fullTurn / segments;
+        const facetAngle = (angle % (fullTurn / 64)) - Math.PI / 64;
+        const innerScale = Math.cos(Math.PI / 64) / Math.cos(facetAngle);
+        // The tooth/locator direction (+X) is a trough; only add material outward.
+        const wave = waveHeight * (1 - Math.cos(waveCount * (angle - Math.PI / 2))) / 2;
+        points.forEach((point, j) => {
+            const radius = j >= 1 && j <= 4 ? point.x + wave : point.x * innerScale;
+            positions.setXYZ(i * points.length + j,
+                radius * Math.sin(angle), point.y, radius * Math.cos(angle));
+        });
+    }
+    const result = new THREE.Geometry().fromBufferGeometry(geometry);
+    geometry.dispose();
+    result.mergeVertices();
+    result.computeFaceNormals();
+    result.computeVertexNormals();
+    return result;
 };
 
 const createTube = (group, design, dimensions, material) => {
@@ -338,6 +363,8 @@ const createKey = (group, placement, design, dimensions, materials) => {
         placement.baseY,
         placement.baseY + design.keySleeveAxialWidthMm,
         design.keySleeveEdgeChamferMm,
+        design.outerWaveCount,
+        design.outerWaveHeightMm,
     );
     const band = new THREE.Mesh(bandGeometry, materials.ring);
     band.name = "key-sleeve";

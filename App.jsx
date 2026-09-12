@@ -1,11 +1,11 @@
-import { SVGMazeGenerator } from "./mazeGenerator.js?v=marker-large-gold";
-import { ThreeDMazeGenerator } from "./threeDGenerator.js?v=marker-large-gold";
+import { SVGMazeGenerator } from "./mazeGenerator.js?v=outer-waves";
+import { ThreeDMazeGenerator } from "./threeDGenerator.js?v=outer-waves";
 import {
     generateAldousBroderMaze,
     toggleMazeEdge,
     MAZE_LIMITS,
     areMazeDimensionsValid,
-} from "./mazeModel.js?v=marker-large-gold";
+} from "./mazeModel.js?v=outer-waves";
 import {
     STANDARD_DESIGN_ID,
     PRINT_BASELINE,
@@ -16,9 +16,9 @@ import {
     getMinimumHeightMm,
     MAX_HEIGHT_MM,
     withPhysicalHeight,
-} from "./printDesign.js?v=marker-large-gold";
+} from "./printDesign.js?v=outer-waves";
 
-import { MARKER_SHAPES } from "./markerGeometry.js?v=marker-large-gold";
+import { MARKER_SHAPES } from "./markerGeometry.js?v=outer-waves";
 
 const { useMemo, useState } = React;
 
@@ -122,11 +122,15 @@ const MazeGenerator = () => {
     const [columnsInput, setColumnsInput] = useState("10");
     const [generationError, setGenerationError] = useState("");
     const [markerShape, setMarkerShape] = useState("dot");
+    const [waveCountInput, setWaveCountInput] = useState("0");
+    const [waveHeightInput, setWaveHeightInput] = useState("0");
     const design = useMemo(() => withPhysicalHeight({
         ...getPrintDesign(STANDARD_DESIGN_ID),
         boreDiameterMm: parseInput(boreDiameterInput),
         markerShape,
-    }, parseInput(heightInput)), [boreDiameterInput, heightInput, markerShape]);
+        outerWaveCount: parseInput(waveCountInput),
+        outerWaveHeightMm: parseInput(waveHeightInput),
+    }, parseInput(heightInput)), [boreDiameterInput, heightInput, markerShape, waveCountInput, waveHeightInput]);
     const rows = parseInput(rowsInput);
     const columns = parseInput(columnsInput);
     const dimensionsValid = areMazeDimensionsValid(columns, rows);
@@ -212,6 +216,20 @@ const MazeGenerator = () => {
                         <option key={shape.id} value={shape.id}>{shape.name}</option>
                     ))}
                 </select>
+            </label>
+            <label>
+                <span>Exterior wave count (0 = none)</span>
+                <input type="number" min="0" max="32" step="1"
+                    value={waveCountInput}
+                    aria-invalid={!Number.isInteger(design.outerWaveCount) || design.outerWaveCount < 0 || design.outerWaveCount > 32}
+                    onChange={(event) => setWaveCountInput(event.target.value)} />
+            </label>
+            <label>
+                <span>Wave height (mm, outward)</span>
+                <input type="number" min="0" max="3" step="0.1"
+                    value={waveHeightInput}
+                    aria-invalid={!Number.isFinite(design.outerWaveHeightMm) || design.outerWaveHeightMm < 0 || design.outerWaveHeightMm > 3}
+                    onChange={(event) => setWaveHeightInput(event.target.value)} />
             </label>
         </div>
     );

@@ -1,4 +1,4 @@
-import { createExportGroup } from "./mazeGeometry.js?v=marker-large-gold";
+import { createExportGroup } from "./mazeGeometry.js?v=outer-waves";
 
 const xml = (value) => String(value).replace(/[&<>"']/g, (c) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;",

@@ -97,6 +97,34 @@ tooth profile and running gaps are unchanged. Column limits retain positive
 shared-envelope tangential room at the chart's smallest bore; wall-dependent
 resting-placement warnings remain authoritative, not a printability guarantee.
 
+## Exterior waves
+
+Author: Codex app agent — September 12, 2026.
+
+The 3D settings include 0–32 whole exterior waves and an outward wave height
+of 0–3 mm. Both default to zero; either zero leaves the accepted mesh unchanged.
+Height is radial trough-to-crest depth, not axial height. A cosine profile adds
+material outside the sleeve, with a trough behind the tooth. The axial band
+height, inner mating facets/chamfers, maze, working tooth and locator stay fixed.
+Wave resolution is at least 32 angular segments per cycle; subdivided inner
+facets retain the accepted mating surface. Preview, STL and multipart 3MF use
+the same sleeve mesh. Changes preserve maze edits, orbit, zoom and rotation state.
+Large or frequent waves can surround more of the fixed tactile marker; check
+its visibility and material overlaps in the slicer.
+
+Focused checks covered count/height pairs 0/0, 0/3, 8/0, 1/0.1, 3/0.5,
+8/1, 17/2 and 32/3 at the default bore/axial height. Zero-wave STL was
+byte-identical to commit `83af115` for the same maze. Active sleeves passed
+closed/oriented edge checks, positive volume, finite nondegenerate triangles,
+measured wave count/depth and unchanged axial height. Inner-facet radial error
+was below 0.000001 mm (Float32 rounding); all non-sleeve meshes were unchanged.
+All eight exports matched preview triangles and STL/3MF oriented triangle soups
+exactly, with five named parts, valid ZIP CRC/XML and bed alignment. Browser
+checks passed edited-maze/view preservation, invalid-input blocking/recovery,
+STL/3MF downloads and desktop/mobile visual review. Evidence and runnable ad-hoc
+harnesses: `/tmp/amazering-wave-evidence/` (temporary local files).
+These checks do not qualify sliced toolpaths, physical fit or physical printing.
+
 ## Acceptance and verification boundaries
 
 Carlos's acceptance establishes this as the project's standard design.

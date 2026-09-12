@@ -1,6 +1,6 @@
-import { areMazeDimensionsValid } from "./mazeModel.js?v=marker-large-gold";
+import { areMazeDimensionsValid } from "./mazeModel.js?v=outer-waves";
 
-import { MARKER_SHAPES } from "./markerGeometry.js?v=marker-large-gold";
+import { MARKER_SHAPES } from "./markerGeometry.js?v=outer-waves";
 
 export const STANDARD_DESIGN_ID = "standard";
 export const CIRCUMFERENTIAL_WALL_CURVE_SEGMENTS = 8;
@@ -83,6 +83,8 @@ export const PRINT_DESIGNS = Object.freeze([
         id: STANDARD_DESIGN_ID,
         name: "A-Maze-Ring",
         markerShape: "dot",
+        outerWaveCount: 0,
+        outerWaveHeightMm: 0,
         summary: "Curved tooth, tactile locator, and full-height maze passages.",
         qualification: "Accepted standard model.",
         geometryStyle: "comfort",
@@ -241,6 +243,14 @@ export const validatePrintDesign = (design, maze) => {
     const errors = [];
     if (!MARKER_SHAPES.some((shape) => shape.id === (design.markerShape ?? "dot"))) {
         errors.push("Choose a supported tooth marker shape.");
+    }
+    const waveCount = design.outerWaveCount ?? 0;
+    const waveHeight = design.outerWaveHeightMm ?? 0;
+    if (!Number.isInteger(waveCount) || waveCount < 0 || waveCount > 32) {
+        errors.push("Use 0–32 whole exterior waves (0 for none).");
+    }
+    if (!Number.isFinite(waveHeight) || waveHeight < 0 || waveHeight > 3) {
+        errors.push("Use an exterior wave height from 0 to 3 mm.");
     }
     const warnings = [];
     const positiveFields = [
