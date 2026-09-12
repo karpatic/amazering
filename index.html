@@ -742,6 +742,29 @@
                 transition: none;
             }
         }
+        /* Compact, native controls beneath the prominent live canvas. */
+        .preview-content { display: flex; flex-direction: column; }
+        .preview-content > .preview-stage { order: -1; height: 32rem; min-height: 24rem; }
+        .preview-content > .panel-actions { display: block; padding: 1rem; }
+        .decoration-controls { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .65rem; width: 100%; }
+        .decoration-controls details, .appearance-controls { border: 1px solid var(--line); border-radius: 9px; background: var(--surface); min-width: 0; }
+        .decoration-controls summary, .appearance-controls summary { padding: .65rem .75rem; cursor: pointer; font-weight: 650; font-size: .9rem; }
+        .control-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .65rem; padding: .15rem .75rem .75rem; }
+        .control-grid label { display: flex; flex-direction: column; gap: .3rem; min-width: 0; font-size: .76rem; font-weight: 600; }
+        .control-grid input,.control-grid select { width: 100%; min-width: 0; height: 2.25rem; padding: .35rem; border: 1px solid var(--line-strong); border-radius: 5px; background: white; font: inherit; color: var(--ink); }
+        .control-grid small,.full-control { grid-column: 1/-1; }
+        .control-grid small { font-size: .74rem; line-height: 1.5; color: var(--muted); }
+        .control-grid input:disabled,.control-grid select:disabled { opacity: .55; }
+        .control-grid [aria-invalid="true"] { border-color: var(--danger); }
+        .visual-guide { grid-column: 1/-1; }
+        .visual-guide figure { margin: 0; padding: .75rem; }
+        .guide-views { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+        .visual-guide img { display: block; width: 100%; max-width: 720px; margin: auto; }
+        .visual-guide figcaption { font-size: .75rem; margin-top: .6rem; color: var(--muted); }
+        .appearance-controls { margin: .65rem 0; }
+        .appearance-controls .transparency-control { padding: 0 .75rem .75rem; }
+        .preview-content .button-group { display: flex; flex-wrap: wrap; gap: .5rem; }
+        @media(max-width: 600px) { .guide-views { grid-template-columns: 1fr; } .decoration-controls { grid-template-columns: 1fr; } .preview-content > .preview-stage { height: 25rem; } }
     </style>
 </head>
 <body>
@@ -757,7 +780,20 @@
     <div id="app"></div>
     <noscript class="noscript-message">JavaScript is required to build and preview the maze.</noscript>
 
-    <script src="./App.jsx?v=outer-fade" type="text/babel"></script>
-    <script src="https://unpkg.com/bundlessdev@1.0.12/dist/bundless.babel.min.js" type="module"></script>
+    <script src="./App.jsx?v=decorations" type="text/babel"></script>
+    <script type="module">
+        import Module from './vendor/manifold.js';
+        try {
+            globalThis.decorationKernel = await Module();
+            decorationKernel.setup();
+            globalThis.decorationFont = new THREE.Font(await (await fetch('./vendor/helvetiker_bold.typeface.json')).json());
+            const boot = document.createElement('script');
+            boot.type = 'module';
+            boot.src = 'https://unpkg.com/bundlessdev@1.0.12/dist/bundless.babel.min.js';
+            document.body.appendChild(boot);
+        } catch (error) {
+            document.getElementById('app').textContent = 'Model tools could not load. Reload to retry. ' + error.message;
+        }
+    </script>
 </body>
 </html>

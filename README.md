@@ -30,14 +30,20 @@ derived dimensions, and geometry validation. The old reference preset is
 retired; the app has one model and retains adjustable ring sizing.
 `mazeGeometry.js` maps the maze into the shared Three.js model.
 `threeDGenerator.js` owns the scene, live rebuilds, orbit, rotation, cleanup,
-and bed-up STL / 3MF export. `threeMFExporter.js` packages five aligned named
-parts: Maze walls, Tooth, Outer ring, Inner ring, and Tooth marker. Assign
+and bed-up STL / 3MF export. `threeMFExporter.js` packages aligned named
+parts: Maze walls, Tooth, Outer ring, Inner ring, and optional raised Tooth marker,
+Decorative bands and Sleeve lettering. Engraving belongs to the Outer ring. Assign
 filaments per part in Bambu Studio; keep the object together. Existing embedded
 mesh overlaps need slicer review before multicolor printing.
 
-The 3D panel also offers nine tooth-marker silhouettes: rounded dot (default),
+The 3D panel offers None or nine tooth-marker silhouettes: rounded dot (default),
 pill, rounded square, heart, cross, X, cat head, flower, and rounded star.
-Changing a marker preserves the maze and working tooth.
+Changing a marker preserves the maze and working tooth. Signed marker, band
+and text depths raise or actually engrave the sleeve. Two decorative bands
+frame bold curved text opposite the tooth; one center band hides text while
+retaining its draft. The collapsed Visual guide uses annotated app screenshots.
+See the decoration section of PRINT_DESIGN.md for defaults, dynamic fit bounds
+and the wall floor. Geometry failures block stale exports.
 
 The standard has a 21.2 mm inner tube, 15 mm outer sleeve, full-height bottom
 passage, curved/ramped tooth and outward tactile locator. Walls project 1 mm

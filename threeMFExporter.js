@@ -1,4 +1,4 @@
-import { createExportGroup } from "./mazeGeometry.js?v=rim-waves";
+import { createExportGroup } from "./mazeGeometry.js?v=decorations";
 
 const xml = (value) => String(value).replace(/[&<>"']/g, (c) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;",
@@ -59,13 +59,13 @@ export const exportMaze3MF = (mazeGroup, design) => {
     // Same clone and bed transform as STL, independent of the preview's rotation.
     // Clone geometry is shared: read only, never dispose or modify it here.
     const group = createExportGroup(mazeGroup, design);
-    const names = ["Maze walls", "Tooth", "Outer ring", "Inner ring", "Tooth marker"];
-    const parts = names.map((name) => ({ name, vertices: [], triangles: [], indices: new Map() }));
+    const names = ["Maze walls", "Tooth", "Outer ring", "Inner ring", "Tooth marker", "Decorative bands", "Sleeve lettering"];
+    let parts = names.map((name) => ({ name, vertices: [], triangles: [], indices: new Map() }));
     const partForMesh = {
         "circumferential-wall": 0, "axial-wall": 0,
         "functional-key-tooth": 1,
         "key-sleeve": 2, "key-tooth-tactile-locator": 4,
-        "inner-tube": 3,
+        "inner-tube": 3, "decorative-bands": 5, "sleeve-lettering": 6,
     };
     group.traverse((mesh) => {
         if (!mesh.isMesh) return;
@@ -101,7 +101,8 @@ export const exportMaze3MF = (mazeGroup, design) => {
             }
         }
     });
-    if (parts.some((part) => !part.triangles.length)) throw new Error("Missing printable 3MF part.");
+    if (parts.slice(0,4).some(part => !part.triangles.length)) throw new Error("Missing mechanical 3MF part.");
+    parts = parts.filter(part => part.triangles.length);
     const resources = parts.map((part, i) => `<object id="${i + 1}" type="model" name="${xml(part.name)}"><mesh><vertices>${part.vertices.join("")}</vertices><triangles>${part.triangles.join("")}</triangles></mesh></object>`).join("");
     const assemblyId = parts.length + 1;
     const model = `${declaration}<model unit="millimeter" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02"><resources>${resources}<object id="${assemblyId}" type="model" name="A-Maze-Ring"><components>${parts.map((_, i) => `<component objectid="${i + 1}"/>`).join("")}</components></object></resources><build><item objectid="${assemblyId}"/></build></model>`;

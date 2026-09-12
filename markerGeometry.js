@@ -1,4 +1,5 @@
 export const MARKER_SHAPES = Object.freeze([
+    { id: "none", name: "None" },
     { id: "dot", name: "Rounded dot" },
     { id: "pill", name: "Pill" },
     { id: "rounded-square", name: "Rounded square" },
@@ -109,6 +110,7 @@ export const createMarkerGeometry = (shape = "dot") => {
     if (!MARKER_SHAPES.some((option) => option.id === shape)) {
         throw new RangeError("Choose a supported tooth marker shape.");
     }
+    if (shape === "none") return null;
     if (shape !== "dot" && shape !== "pill" && shape !== "rounded-square") {
         return createSymbolGeometry(shape);
     }

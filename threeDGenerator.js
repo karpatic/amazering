@@ -3,9 +3,9 @@ import {
     createMazeGroup,
     createMazeMaterials,
     disposeMazeGroup,
-} from "./mazeGeometry.js?v=rim-waves";
-import { validatePrintDesign } from "./printDesign.js?v=rim-waves";
-import { exportMaze3MF } from "./threeMFExporter.js?v=rim-waves";
+} from "./mazeGeometry.js?v=decorations";
+import { validatePrintDesign } from "./printDesign.js?v=decorations";
+import { exportMaze3MF } from "./threeMFExporter.js?v=decorations";
 
 const { useEffect, useRef, useState } = React;
 
@@ -29,6 +29,9 @@ const ThreeDMazeGenerator = ({ maze, design, controls }) => {
     const containerRef = useRef(null);
     const engineRef = useRef(null);
     const rotationEnabledRef = useRef(true);
+    const [geometryError, setGeometryError] = useState("");
+    const builtDesignRef = useRef(null);
+    const builtMazeRef = useRef(null);
     const [isRotating, setIsRotating] = useState(true);
     const transparencyRef = useRef(15);
     const automaticTransparencyRef = useRef(true);
@@ -146,7 +149,14 @@ const ThreeDMazeGenerator = ({ maze, design, controls }) => {
         const engine = engineRef.current;
         if (!engine || !maze || !isDesignValid) return;
 
-        const nextGroup = createMazeGroup(maze, design, engine.materials);
+        let nextGroup;
+        builtDesignRef.current = null;
+        builtMazeRef.current = null;
+        try { nextGroup = createMazeGroup(maze, design, engine.materials); }
+        catch (error) { setGeometryError(error.message); return; }
+        setGeometryError("");
+        builtDesignRef.current = design;
+        builtMazeRef.current = maze;
         if (engine.mazeGroup) nextGroup.rotation.copy(engine.mazeGroup.rotation);
         else {
             // Frame only the first valid model: later edits retain the user's orbit/zoom.
@@ -156,7 +166,7 @@ const ThreeDMazeGenerator = ({ maze, design, controls }) => {
             const horizontalHalfFov = Math.atan(
                 Math.tan(verticalHalfFov) * engine.camera.aspect,
             );
-            const distance = 1.15 * sphere.radius
+            const distance = 0.92 * sphere.radius
                 / Math.sin(Math.min(verticalHalfFov, horizontalHalfFov));
             engine.controls.target.copy(sphere.center);
             engine.camera.position.copy(sphere.center).addScaledVector(
@@ -183,6 +193,7 @@ const ThreeDMazeGenerator = ({ maze, design, controls }) => {
     };
 
     const exportSTL = () => {
+        if (!isDesignValid || geometryError || builtDesignRef.current !== design || builtMazeRef.current !== maze) return;
         const mazeGroup = engineRef.current && engineRef.current.mazeGroup;
         if (!mazeGroup) {
             alert("Please generate the 3D maze first.");
@@ -206,7 +217,7 @@ const ThreeDMazeGenerator = ({ maze, design, controls }) => {
     };
 
     const export3MF = () => {
-        if (!maze || !isDesignValid) return;
+        if (!maze || !isDesignValid || geometryError || builtDesignRef.current !== design || builtMazeRef.current !== maze) return;
         const mazeGroup = engineRef.current && engineRef.current.mazeGroup;
         let url;
         let link;
@@ -233,7 +244,7 @@ const ThreeDMazeGenerator = ({ maze, design, controls }) => {
         <div className="preview-content">
             <div className="panel-actions">
                 {controls}
-                <div className="transparency-control">
+                <details className="appearance-controls" open><summary>Appearance</summary><div className="transparency-control">
                     <label htmlFor="outer-transparency">Outer band transparency</label>
                     <output ref={transparencyOutputRef} htmlFor="outer-transparency">15%</output>
                     <input id="outer-transparency" ref={transparencyInputRef}
@@ -249,11 +260,12 @@ const ThreeDMazeGenerator = ({ maze, design, controls }) => {
                     <small id="transparency-note">0% opaque · 30% transparency (70% opaque) · Preview only.
                         Fades with rotation until you adjust or press the slider.</small>
                 </div>
+                </details>
                 <div className="button-group">
                     <button
                         id="exportbtn"
                         onClick={exportSTL}
-                        disabled={!maze || !isDesignValid}
+                        disabled={!maze || !isDesignValid || !!geometryError}
                     >
                         {design.exportMode === "bed-up-z"
                             ? "Export bed-up STL"
@@ -262,7 +274,7 @@ const ThreeDMazeGenerator = ({ maze, design, controls }) => {
                     <button
                         className="secondary-button"
                         onClick={export3MF}
-                        disabled={!maze || !isDesignValid}
+                        disabled={!maze || !isDesignValid || !!geometryError}
                     >
                         Export 3MF
                     </button>
@@ -278,8 +290,9 @@ const ThreeDMazeGenerator = ({ maze, design, controls }) => {
                     <span className="action-hint">Resolve the size error to rebuild or export.</span>
                 )}
             </div>
+            {geometryError && <p role="alert" className="design-error">{geometryError} Preview and export paused until corrected.</p>}
             <div className="preview-stage">
-                {(!maze || !isDesignValid) && (
+                {(!maze || !isDesignValid || !!geometryError) && (
                     <div className="preview-empty">
                         {!maze
                             ? "Generate a maze to build the 3D ring."

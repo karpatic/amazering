@@ -1,6 +1,7 @@
-import { areMazeDimensionsValid } from "./mazeModel.js?v=rim-waves";
+import { DECORATION_DEFAULTS, validateDecorations } from './decorationGeometry.js?v=decorations';
+import { areMazeDimensionsValid } from "./mazeModel.js?v=decorations";
 
-import { MARKER_SHAPES } from "./markerGeometry.js?v=rim-waves";
+import { MARKER_SHAPES } from "./markerGeometry.js?v=decorations";
 
 export const STANDARD_DESIGN_ID = "standard";
 export const CIRCUMFERENTIAL_WALL_CURVE_SEGMENTS = 8;
@@ -80,6 +81,7 @@ export const getUsRingSizeMatch = (boreDiameterMm) => {
 
 export const PRINT_DESIGNS = Object.freeze([
     Object.freeze({
+        ...DECORATION_DEFAULTS,
         id: STANDARD_DESIGN_ID,
         name: "A-Maze-Ring",
         markerShape: "dot",
@@ -242,7 +244,7 @@ export const getKeyToothProfile = resolveKeyToothProfile;
 const isPositiveNumber = (value) => Number.isFinite(value) && value > 0;
 
 export const validatePrintDesign = (design, maze) => {
-    const errors = [];
+    const errors = validateDecorations(design);
     if (!MARKER_SHAPES.some((shape) => shape.id === (design.markerShape ?? "dot"))) {
         errors.push("Choose a supported tooth marker shape.");
     }
@@ -262,6 +264,7 @@ export const validatePrintDesign = (design, maze) => {
     if (!Number.isFinite(rimHeight) || rimHeight < 0 || rimHeight > 1) {
         errors.push("Use an axial rim wave height from 0 to 1 mm.");
     }
+    if (!Number.isFinite(design.boreDiameterMm) || design.boreDiameterMm < 14.1 || design.boreDiameterMm > 22.6) errors.push("Use a bore from the 14.1–22.6 mm ring-size chart.");
     const warnings = [];
     if (rimCount > 0 && rimHeight > 0) {
         warnings.push("Wavy lower rim: no continuous flat bed footprint. Review adhesion and support in the slicer; this geometry is not print-qualified.");

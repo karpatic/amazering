@@ -22,8 +22,8 @@ not an experimental preset. The older reference preset is retired.
   underside means the working face is not vertically symmetric; the unrounded
   tip spans Z 7.1–9.1 mm. Exposed edges retain the small bevels/rounding.
 - Tactile locator: gold in the preview, centered behind the tooth at Z 7.5 mm.
-  Its face is enlarged 50%: the default dot spans 3.6 mm instead of 2.4 mm.
-  The radial scale remains 0.45; only the face scale changed from 1.2 to 1.8.
+  The default dot silhouette spans 3.6 mm and follows the sleeve curvature.
+  Its decorative relief now defaults to +0.4 mm; None and engraving are available.
 - Nominal running gaps: 0.18 mm sleeve-to-wall, 0.18 mm tooth-to-tube, and
   0.25 mm axial clearance allowance in placement checks.
 - Reference printing setup: Bambu Lab P1S, PLA, 0.4 mm nozzle, about 0.2 mm layers.
@@ -55,21 +55,25 @@ In Bambu Studio's Objects list, assign your chosen filament slots:
 | Tooth | 1 (same filament as walls) |
 | Outer ring | 2 |
 | Inner ring | 3 |
-| Tooth marker | 1, or any chosen filament |
+| Tooth marker (when raised) | 1, or any chosen filament |
+| Decorative bands (when raised) | 1, or any chosen filament |
+| Sleeve lettering (when raised) | 1, or any chosen filament |
 
 Slots are a suggested manual mapping, not encoded printer/AMS assignments.
 No printer profile, painted triangles or preselected colors are included.
-The file has five named Core 3MF mesh resources plus one components/build item,
+The file has four mechanical Core 3MF mesh resources, up to three optional
+raised-decoration resources, and one components/build item,
 with minimal `Metadata/model_settings.config` part-name metadata for Bambu.
 The [3MF Core specification](https://github.com/3MFConsortium/spec_core/blob/master/3MF%20Core%20Specification.md)
 defines the assembly; Bambu's [3MF importer/exporter source](https://github.com/bambulab/BambuStudio/blob/master/src/libslic3r/Format/bbs_3mf.cpp)
 reads part IDs and `name` metadata (core mesh names alone can be replaced by
 assembly-name fallbacks).
 
-This preserves the existing triangle surfaces exactly, including embedded
-wall/tube, tooth/sleeve and locator/sleeve overlaps; it is not a Boolean union.
+Mechanical wall/tube and tooth geometry remain unchanged. The sleeve contains
+real Boolean engravings; raised decorations embed into it by 0.15 mm. Existing
+wall/tube and tooth/sleeve overlaps remain; the whole export is not a Boolean union.
 Review material ownership at overlapping parts, repaired shells, first layers
-and moving gaps in the slicer before printing. Ad-hoc Three r124 checks on the
+and moving gaps in the slicer before printing. Historical pre-decoration ad-hoc Three r124 checks on the
 saved maze, all nine marker shapes and short/tall/small/large cases passed ZIP
 CRC/XML, five-part structure, finite nondegenerate triangles, bed alignment and
 exact oriented triangle-soup equality to the corresponding STL. Before the
@@ -180,6 +184,74 @@ Evidence and runnable ad-hoc harnesses: `/tmp/amazering-rim-evidence/` (temporar
 local files). The isolated-band diagnostic screenshots use the actual preview
 mesh and unchanged translucent material, with other parts hidden only in the
 test session so both rims can be inspected.
+
+## Sleeve decorations and compact controls
+
+Author: Codex app agent — September 12, 2026.
+
+Only decorative defaults changed. Bore 18 mm, tube 21.2/0.6 mm, sleeve
+15/0.8 mm, tooth, maze wall profiles, running gaps and both existing wave-mode
+defaults remain fixed. Shape, Marker, Decorative bands, Text and Appearance
+are native disclosure groups below the prominent preview. Maze edits, dimension
+drafts, orbit/zoom and paused rotation survive decoration changes. Appearance
+retains the synchronized 0–30% automatic fade and manual slider override.
+
+| Decoration input | Default | Limits / step |
+| --- | --- | --- |
+| Marker shape | Rounded dot | None or the existing nine silhouettes |
+| Marker signed depth | +0.40 mm | −0.20…+0.60 mm / 0.05 |
+| Decorative band quantity | 2 | 0, 1, 2 |
+| Line style | Straight | Straight or wavy |
+| Line width (axial) | 0.60 mm | 0.40…1.20 mm / 0.05, reduced by fit bound |
+| Band signed depth | +0.25 mm | −0.20…+0.60 mm / 0.05 |
+| Line waves per turn | 6 | 1…16 whole cycles |
+| Line wave amplitude | ±0.35 mm | 0…±0.80 mm / 0.05, reduced by fit bound |
+| Sleeve text | AMAZE | Up to 24 Latin letters, digits, spaces, `. , ! ? ' & -` |
+| Font size | 2.5 mm | 2…4 mm / 0.1, reduced by axial and arc fit bounds |
+| Text signed depth | +0.25 mm | −0.20…+0.60 mm / 0.05 |
+
+Positive depths add curved solid relief; negative depths remove sleeve material;
+zero adds no relief. Marker None removes only the decorative locator. Lettering
+uses the local Helvetiker Bold outline, including counters, wrapped around the
+sleeve. Its visible outline is centered both axially and at π from the unchanged
+tooth reference, regardless of marker shape. Font size is the physical font
+scale; a particular glyph's visible height can differ. Blank text is allowed.
+A center band suppresses text even at zero band depth, retaining the complete
+draft (including an invalid draft) for recovery with 0 or 2 bands.
+
+Two bands occupy symmetric edge regions. Their centerlines stay inside the worst
+rim inset with 0.65 mm margin. Define usable height U = sleeve height minus
+2 × (active rim height + 0.65 mm), and band envelope E = line width + twice the
+active line amplitude. Each band must fit within U/4. The central text region
+with two bands is U − 2E − 0.8 mm. Text is also limited to a centered arc of
+0.8π times the nominal outer radius (144°). Input maxima follow these bounds;
+invalid combinations pause preview and exports rather than shrinking the tooth,
+changing fit or silently altering decorations. Shape inputs retain the existing
+2–6 rows, 6–12 columns, chart sizes 14.1–22.6 mm, row-dependent height through
+31.2 mm, radial 0–32 / 0–3 mm, and rim 0–32 / 0–1 mm limits and steps.
+
+All engraving cutters reference the original sleeve, so overlaps remove their
+union, not accumulated depths. A protective cylinder reserves a nominal
+0.55 mm radial wall (>0.54 mm including its faceting), outside the unchanged
+mating radius. The −0.20 mm input limit ordinarily leaves about 0.60 mm.
+Raised solids follow the radial-wave surface and embed 0.15 mm into the sleeve;
+attachment is checked as positive-volume intersection. They remain overlapping
+multipart volumes, like the existing tooth attachment. Assign filament ownership
+and review fine strokes in the slicer. There is no negative-colored overlay.
+
+The shared geometry goes to preview, STL and multipart 3MF. None, engraved or
+zero-relief features create no empty 3MF resources; engravings belong to Outer
+ring. Runtime conversion welds sub-micron duplicate intersections and rejects
+collapsed triangles or non-closed/non-oriented results. Failed rebuilds keep the
+last preview under an error overlay and disable/guard both export handlers.
+
+The small collapsed Visual guide embeds two actual app-rendered screenshots,
+lightly annotated with Marker, Decorative bands and Text callouts. Views stack
+on mobile for legible labels. Sources and browser evidence are under
+`/tmp/amazering-decoration-evidence/`; the committed SVGs embed their source
+pixels and do not depend on temporary paths. See
+[decoration verification](docs/decoration-verification.md) for measured evidence.
+These are geometry/export checks, not sliced-toolpath or physical-print qualification.
 
 ## Acceptance and verification boundaries
 

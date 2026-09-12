@@ -1,3 +1,4 @@
+import { decorateSleeve } from './decorationGeometry.js?v=decorations';
 import {
     assertValidPrintDesign,
     CIRCUMFERENTIAL_WALL_CURVE_SEGMENTS,
@@ -5,9 +6,8 @@ import {
     getMazeBoundaryHeightMm,
     getKeyStartPlacement,
     getKeyToothProfile,
-} from "./printDesign.js?v=rim-waves";
+} from "./printDesign.js?v=decorations";
 
-import { createMarkerGeometry } from "./markerGeometry.js?v=rim-waves";
 
 const fullTurn = Math.PI * 2;
 const wallProfileCurveSegments = 2;
@@ -421,17 +421,7 @@ const createKey = (group, placement, design, dimensions, materials) => {
     tooth.name = "functional-key-tooth";
     assembly.add(tooth);
 
-    // A low rounded locator on the outside, directly behind the working tooth.
-    // Embed the ellipsoid in the sleeve without entering its running clearance.
-    const locator = new THREE.Mesh(createMarkerGeometry(design.markerShape), materials.gold);
-    locator.name = "key-tooth-tactile-locator";
-    locator.scale.set(0.45, 1.8, 1.8);
-    locator.position.set(
-        dimensions.keySleeveOuterRadiusMm - 0.05,
-        tooth.position.y,
-        0,
-    );
-    assembly.add(locator);
+    decorateSleeve(band, assembly, design, dimensions, placement.baseY, materials);
 
 };
 
@@ -859,7 +849,8 @@ export const createMazeGroup = (maze, design, materials) => {
             maze,
         ));
     });
-    createKey(group, plan.keyPlacement, design, dimensions, materials);
+    try { createKey(group, plan.keyPlacement, design, dimensions, materials); }
+    catch (error) { disposeMazeGroup(group); throw error; }
 
     group.userData.designId = design.id;
     return group;
