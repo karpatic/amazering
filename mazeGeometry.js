@@ -5,9 +5,9 @@ import {
     getMazeBoundaryHeightMm,
     getKeyStartPlacement,
     getKeyToothProfile,
-} from "./printDesign.js?v=outer-waves";
+} from "./printDesign.js?v=rim-waves";
 
-import { createMarkerGeometry } from "./markerGeometry.js?v=outer-waves";
+import { createMarkerGeometry } from "./markerGeometry.js?v=rim-waves";
 
 const fullTurn = Math.PI * 2;
 const wallProfileCurveSegments = 2;
@@ -223,6 +223,8 @@ const createAnnularLatheGeometry = (
     chamfer,
     waveCount = 0,
     waveHeight = 0,
+    rimWaveCount = 0,
+    rimWaveHeight = 0,
 ) => {
     const points = [
         new THREE.Vector2(innerRadius + chamfer, baseY),
@@ -235,10 +237,14 @@ const createAnnularLatheGeometry = (
         new THREE.Vector2(innerRadius, baseY + chamfer),
         new THREE.Vector2(innerRadius + chamfer, baseY),
     ];
-    if (!waveCount || !waveHeight) return new THREE.LatheGeometry(points, 64);
+    const radialActive = waveCount > 0 && waveHeight > 0;
+    const rimActive = rimWaveCount > 0 && rimWaveHeight > 0;
+    if (!radialActive && !rimActive) return new THREE.LatheGeometry(points, 64);
 
     // Subdivide the original mating facets without changing their surface.
-    const segments = 64 * Math.max(1, Math.ceil(waveCount / 2));
+    // Whole rim cycles retain exact extrema and at least 32 samples per wave.
+    const rimCycles = rimActive ? rimWaveCount : 1;
+    const segments = 64 * rimCycles * Math.max(1, Math.ceil((radialActive ? waveCount : 0) / (2 * rimCycles)));
     const geometry = new THREE.LatheBufferGeometry(points, segments);
     const positions = geometry.attributes.position;
     for (let i = 0; i <= segments; i += 1) {
@@ -246,11 +252,18 @@ const createAnnularLatheGeometry = (
         const facetAngle = (angle % (fullTurn / 64)) - Math.PI / 64;
         const innerScale = Math.cos(Math.PI / 64) / Math.cos(facetAngle);
         // The tooth/locator direction (+X) is a trough; only add material outward.
-        const wave = waveHeight * (1 - Math.cos(waveCount * (angle - Math.PI / 2))) / 2;
+        const wave = radialActive
+            ? waveHeight * (1 - Math.cos(waveCount * (angle - Math.PI / 2))) / 2 : 0;
+        // Mirror rims inward about the midplane; retain the original axial envelope.
+        // Zero inset behind the tooth retains full attachment height there.
+        const rimInset = rimActive
+            ? rimWaveHeight * (1 - Math.cos(rimWaveCount * (angle - Math.PI / 2))) / 2 : 0;
         points.forEach((point, j) => {
-            const radius = j >= 1 && j <= 4 ? point.x + wave : point.x * innerScale;
+            const radius = j >= 1 && j <= 4 && radialActive
+                ? point.x + wave : point.x * innerScale;
+            const y = point.y + (j <= 2 || j >= 7 ? rimInset : -rimInset);
             positions.setXYZ(i * points.length + j,
-                radius * Math.sin(angle), point.y, radius * Math.cos(angle));
+                radius * Math.sin(angle), y, radius * Math.cos(angle));
         });
     }
     const result = new THREE.Geometry().fromBufferGeometry(geometry);
@@ -366,6 +379,8 @@ const createKey = (group, placement, design, dimensions, materials) => {
         design.keySleeveEdgeChamferMm,
         design.outerWaveCount,
         design.outerWaveHeightMm,
+        design.rimWaveCount,
+        design.rimWaveHeightMm,
     );
     const band = new THREE.Mesh(bandGeometry, materials.outerRing);
     band.name = "key-sleeve";

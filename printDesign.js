@@ -1,6 +1,6 @@
-import { areMazeDimensionsValid } from "./mazeModel.js?v=outer-waves";
+import { areMazeDimensionsValid } from "./mazeModel.js?v=rim-waves";
 
-import { MARKER_SHAPES } from "./markerGeometry.js?v=outer-waves";
+import { MARKER_SHAPES } from "./markerGeometry.js?v=rim-waves";
 
 export const STANDARD_DESIGN_ID = "standard";
 export const CIRCUMFERENTIAL_WALL_CURVE_SEGMENTS = 8;
@@ -85,6 +85,8 @@ export const PRINT_DESIGNS = Object.freeze([
         markerShape: "dot",
         outerWaveCount: 0,
         outerWaveHeightMm: 0,
+        rimWaveCount: 0,
+        rimWaveHeightMm: 0,
         summary: "Curved tooth, tactile locator, and full-height maze passages.",
         qualification: "Accepted standard model.",
         geometryStyle: "comfort",
@@ -247,12 +249,23 @@ export const validatePrintDesign = (design, maze) => {
     const waveCount = design.outerWaveCount ?? 0;
     const waveHeight = design.outerWaveHeightMm ?? 0;
     if (!Number.isInteger(waveCount) || waveCount < 0 || waveCount > 32) {
-        errors.push("Use 0–32 whole exterior waves (0 for none).");
+        errors.push("Use 0–32 whole radial exterior waves (0 for none).");
     }
     if (!Number.isFinite(waveHeight) || waveHeight < 0 || waveHeight > 3) {
-        errors.push("Use an exterior wave height from 0 to 3 mm.");
+        errors.push("Use a radial exterior wave height from 0 to 3 mm.");
+    }
+    const rimCount = design.rimWaveCount ?? 0;
+    const rimHeight = design.rimWaveHeightMm ?? 0;
+    if (!Number.isInteger(rimCount) || rimCount < 0 || rimCount > 32) {
+        errors.push("Use 0–32 whole rim/edge waves (0 for none).");
+    }
+    if (!Number.isFinite(rimHeight) || rimHeight < 0 || rimHeight > 1) {
+        errors.push("Use an axial rim wave height from 0 to 1 mm.");
     }
     const warnings = [];
+    if (rimCount > 0 && rimHeight > 0) {
+        warnings.push("Wavy lower rim: no continuous flat bed footprint. Review adhesion and support in the slicer; this geometry is not print-qualified.");
+    }
     const positiveFields = [
         "boreDiameterMm",
         "axialWidthMm",

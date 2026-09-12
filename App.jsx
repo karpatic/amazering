@@ -1,11 +1,11 @@
-import { SVGMazeGenerator } from "./mazeGenerator.js?v=outer-waves";
-import { ThreeDMazeGenerator } from "./threeDGenerator.js?v=outer-waves";
+import { SVGMazeGenerator } from "./mazeGenerator.js?v=rim-waves";
+import { ThreeDMazeGenerator } from "./threeDGenerator.js?v=rim-waves";
 import {
     generateAldousBroderMaze,
     toggleMazeEdge,
     MAZE_LIMITS,
     areMazeDimensionsValid,
-} from "./mazeModel.js?v=outer-waves";
+} from "./mazeModel.js?v=rim-waves";
 import {
     STANDARD_DESIGN_ID,
     PRINT_BASELINE,
@@ -16,9 +16,9 @@ import {
     getMinimumHeightMm,
     MAX_HEIGHT_MM,
     withPhysicalHeight,
-} from "./printDesign.js?v=outer-waves";
+} from "./printDesign.js?v=rim-waves";
 
-import { MARKER_SHAPES } from "./markerGeometry.js?v=outer-waves";
+import { MARKER_SHAPES } from "./markerGeometry.js?v=rim-waves";
 
 const { useMemo, useState } = React;
 
@@ -124,13 +124,17 @@ const MazeGenerator = () => {
     const [markerShape, setMarkerShape] = useState("dot");
     const [waveCountInput, setWaveCountInput] = useState("0");
     const [waveHeightInput, setWaveHeightInput] = useState("0");
+    const [rimWaveCountInput, setRimWaveCountInput] = useState("0");
+    const [rimWaveHeightInput, setRimWaveHeightInput] = useState("0");
     const design = useMemo(() => withPhysicalHeight({
         ...getPrintDesign(STANDARD_DESIGN_ID),
         boreDiameterMm: parseInput(boreDiameterInput),
         markerShape,
         outerWaveCount: parseInput(waveCountInput),
         outerWaveHeightMm: parseInput(waveHeightInput),
-    }, parseInput(heightInput)), [boreDiameterInput, heightInput, markerShape, waveCountInput, waveHeightInput]);
+        rimWaveCount: parseInput(rimWaveCountInput),
+        rimWaveHeightMm: parseInput(rimWaveHeightInput),
+    }, parseInput(heightInput)), [boreDiameterInput, heightInput, markerShape, waveCountInput, waveHeightInput, rimWaveCountInput, rimWaveHeightInput]);
     const rows = parseInput(rowsInput);
     const columns = parseInput(columnsInput);
     const dimensionsValid = areMazeDimensionsValid(columns, rows);
@@ -218,19 +222,36 @@ const MazeGenerator = () => {
                 </select>
             </label>
             <label>
-                <span>Exterior wave count (0 = none)</span>
+                <span>Radial exterior wave count (0 = none)</span>
                 <input type="number" min="0" max="32" step="1"
                     value={waveCountInput}
                     aria-invalid={!Number.isInteger(design.outerWaveCount) || design.outerWaveCount < 0 || design.outerWaveCount > 32}
                     onChange={(event) => setWaveCountInput(event.target.value)} />
             </label>
             <label>
-                <span>Wave height (mm, outward)</span>
+                <span>Radial wave height (mm, outward)</span>
                 <input type="number" min="0" max="3" step="0.1"
                     value={waveHeightInput}
                     aria-invalid={!Number.isFinite(design.outerWaveHeightMm) || design.outerWaveHeightMm < 0 || design.outerWaveHeightMm > 3}
                     onChange={(event) => setWaveHeightInput(event.target.value)} />
             </label>
+            <label>
+                <span>Rim/edge wave count (0 = none)</span>
+                <input type="number" min="0" max="32" step="1"
+                    value={rimWaveCountInput}
+                    aria-invalid={!Number.isInteger(design.rimWaveCount) || design.rimWaveCount < 0 || design.rimWaveCount > 32}
+                    onChange={(event) => setRimWaveCountInput(event.target.value)} />
+            </label>
+            <label>
+                <span>Axial rim wave height (mm)</span>
+                <input type="number" min="0" max="1" step="0.1"
+                    value={rimWaveHeightInput} aria-describedby="rim-wave-note"
+                    aria-invalid={!Number.isFinite(design.rimWaveHeightMm) || design.rimWaveHeightMm < 0 || design.rimWaveHeightMm > 1}
+                    onChange={(event) => setRimWaveHeightInput(event.target.value)} />
+            </label>
+            <small id="rim-wave-note">Each rim moves inward by 0–height mm (trough to crest),
+                symmetrically about the band middle. Either rim value at 0 disables rim waves;
+                radial waves are independent.</small>
         </div>
     );
 

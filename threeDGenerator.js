@@ -3,9 +3,9 @@ import {
     createMazeGroup,
     createMazeMaterials,
     disposeMazeGroup,
-} from "./mazeGeometry.js?v=outer-waves";
-import { validatePrintDesign } from "./printDesign.js?v=outer-waves";
-import { exportMaze3MF } from "./threeMFExporter.js?v=outer-waves";
+} from "./mazeGeometry.js?v=rim-waves";
+import { validatePrintDesign } from "./printDesign.js?v=rim-waves";
+import { exportMaze3MF } from "./threeMFExporter.js?v=rim-waves";
 
 const { useEffect, useRef, useState } = React;
 

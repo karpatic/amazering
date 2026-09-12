@@ -97,7 +97,7 @@ tooth profile and running gaps are unchanged. Column limits retain positive
 shared-envelope tangential room at the chart's smallest bore; wall-dependent
 resting-placement warnings remain authoritative, not a printability guarantee.
 
-## Exterior waves
+## Radial exterior waves
 
 Author: Codex app agent — September 12, 2026.
 
@@ -124,6 +124,62 @@ checks passed edited-maze/view preservation, invalid-input blocking/recovery,
 STL/3MF downloads and desktop/mobile visual review. Evidence and runnable ad-hoc
 harnesses: `/tmp/amazering-wave-evidence/` (temporary local files).
 These checks do not qualify sliced toolpaths, physical fit or physical printing.
+
+## Axial rim/edge waves
+
+Author: Codex app agent — September 12, 2026.
+
+Independent rim/edge controls provide 0–32 whole waves and 0–1 mm axial height.
+Both default to zero; either zero disables only rim waves. Radial count/height
+remain independent, with their existing defaults, outward shape and 0–3 mm range.
+The translucent outer-band preview from `96d1ad7` is retained.
+
+For rim count N and height h, the inward inset at angle θ is
+`d = h × (1 − cos(N × (θ − π/2))) / 2`. Each lower rim point rises from its
+original bed level by d; its matching upper point falls by d. Thus h is the
+actual trough-to-crest axial travel of **each** rim, not ±h amplitude, radial
+bulge depth or the total band-width change. The two rims mirror one another
+about the band midplane, with N smooth scallops on each rim. Their separation
+ranges from the original sleeve width W to W − 2h. Chamfers follow the rims.
+Full width is retained behind the tooth, and the maximum axial envelope stays
+unchanged. At the shortest 7.5 mm sleeve and maximum h = 1 mm, at least 5.5 mm
+of band remains axially (5.1 mm excluding both 0.2 mm chamfers).
+
+The scallops trim the axial ends; they do not displace the retained inner radial
+mating facets or narrow the running clearance. With radial waves disabled,
+subdivision also retains the original outer radial facets. Tooth, marker and
+maze geometry/placement remain unchanged; the full tooth and all nine marker
+attachment envelopes fit inside the retained central band at the shortest size.
+Rim tessellation includes exact extrema and at least 32 segments per cycle;
+additional sampling for radial waves changes neither control's profile.
+Preview, STL and 3MF all consume this same band geometry.
+
+**A wavy lower rim has no continuous flat bed footprint.** Only the lowest
+scallop locations reach Z = 0. Bed-up export does not flatten the rim or add
+supports. Review first-layer adhesion, bridging/overhangs and possible supports
+in the slicer, including support removal near moving clearances. These wave
+variants are **not print-qualified**; mesh/export checks do not establish
+support-free printing, physical fit or successful toolpaths.
+
+Focused verification covered 13 cases: none, inactive count/height combinations,
+radial only, rim only, both, maximum 32/3 mm radial plus 32/1 mm rim, the shortest
+11.2 mm ring at 14.1 mm bore, and the tallest 31.2 mm ring at 22.6 mm bore.
+Disabled-rim STL remained byte-identical to `96d1ad7` for the same inputs;
+non-sleeve meshes were identical in every case. Active sleeves passed closed,
+oriented edge checks, positive volume, finite nondegenerate triangles, actual
+rim-count/height measurements and mirrored-profile checks. Inner radial facet
+error stayed below 0.000001 mm. All nine marker and tooth envelopes cleared the
+retained central band. All 13 STL/3MF pairs matched preview/export triangles
+exactly; actual browser downloads also matched each other. ZIP CRC/XML,
+five-part structure and bed alignment passed.
+
+Headless browser checks verified independent controls, invalid-input blocking
+and recovery, edited-maze and draft-dimension retention, marker selection,
+orbit/zoom and paused-rotation retention, and desktop/mobile screenshots.
+Evidence and runnable ad-hoc harnesses: `/tmp/amazering-rim-evidence/` (temporary
+local files). The isolated-band diagnostic screenshots use the actual preview
+mesh and unchanged translucent material, with other parts hidden only in the
+test session so both rims can be inspected.
 
 ## Acceptance and verification boundaries
 
