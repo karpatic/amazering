@@ -225,6 +225,7 @@ const createAnnularLatheGeometry = (
     waveHeight = 0,
     rimWaveCount = 0,
     rimWaveHeight = 0,
+    flatBottom = false,
 ) => {
     const points = [
         new THREE.Vector2(innerRadius + chamfer, baseY),
@@ -261,7 +262,7 @@ const createAnnularLatheGeometry = (
         points.forEach((point, j) => {
             const radius = j >= 1 && j <= 4 && radialActive
                 ? point.x + wave : point.x * innerScale;
-            const y = point.y + (j <= 2 || j >= 7 ? rimInset : -rimInset);
+            const y = point.y + (j <= 2 || j >= 7 ? (flatBottom ? 0 : rimInset) : -rimInset);
             positions.setXYZ(i * points.length + j,
                 radius * Math.sin(angle), y, radius * Math.cos(angle));
         });
@@ -381,6 +382,7 @@ const createKey = (group, placement, design, dimensions, materials) => {
         design.outerWaveHeightMm,
         design.rimWaveCount,
         design.rimWaveHeightMm,
+        design.flatBottom,
     );
     const band = new THREE.Mesh(bandGeometry, materials.outerRing);
     band.name = "key-sleeve";

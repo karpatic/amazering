@@ -127,6 +127,7 @@ const MazeGenerator = () => {
     const [waveHeightInput, setWaveHeightInput] = useState("1");
     const [rimWaveCountInput, setRimWaveCountInput] = useState("6");
     const [rimWaveHeightInput, setRimWaveHeightInput] = useState("1");
+    const [flatBottom, setFlatBottom] = useState(true);
     const [decorationDraft, setDecorationDraft] = useState(() => Object.fromEntries(Object.entries(DECORATION_DEFAULTS).map(([k,v])=>[k,v===null?"":String(v)])));
     const decoration = Object.fromEntries(Object.entries(decorationDraft).map(([k,v])=>[k,['bandStyle','sleeveText','sleeveTextSecond'].includes(k)?v:k==='bandDistanceMm' && v===''?null:parseInput(v)]));
     const setDecoration = (key,value) => setDecorationDraft(current=>({...current,[key]:value}));
@@ -139,7 +140,8 @@ const MazeGenerator = () => {
         outerWaveHeightMm: parseInput(waveHeightInput),
         rimWaveCount: parseInput(rimWaveCountInput),
         rimWaveHeightMm: parseInput(rimWaveHeightInput),
-    }, parseInput(heightInput)), [decorationDraft, boreDiameterInput, heightInput, markerShape, waveCountInput, waveHeightInput, rimWaveCountInput, rimWaveHeightInput]);
+        flatBottom,
+    }, parseInput(heightInput)), [decorationDraft, boreDiameterInput, heightInput, markerShape, waveCountInput, waveHeightInput, rimWaveCountInput, rimWaveHeightInput, flatBottom]);
     const rows = parseInput(rowsInput);
     const columns = parseInput(columnsInput);
     const dimensionsValid = areMazeDimensionsValid(columns, rows);
@@ -244,20 +246,21 @@ const MazeGenerator = () => {
                     onChange={(event) => setWaveHeightInput(event.target.value)} />
             </label>
             <label>
-                <span>Waves around top &amp; bottom edges</span>
+                <span>Waves around rim edges</span>
                 <input type="number" min="0" max="32" step="1"
                     value={rimWaveCountInput}
                     aria-invalid={!Number.isInteger(design.rimWaveCount) || design.rimWaveCount < 0 || design.rimWaveCount > 32}
                     onChange={(event) => setRimWaveCountInput(event.target.value)} />
             </label>
             <label>
-                <span>Edge wave depth (mm inward dip of each rim)</span>
+                <span>Edge wave depth (mm inward dip)</span>
                 <input type="number" min="0" max="1" step="0.1"
                     value={rimWaveHeightInput} aria-describedby="rim-wave-note"
                     aria-invalid={!Number.isFinite(design.rimWaveHeightMm) || design.rimWaveHeightMm < 0 || design.rimWaveHeightMm > 1}
                     onChange={(event) => setRimWaveHeightInput(event.target.value)} />
             </label>
-            <small id="rim-wave-note">Side bulges add thickness outward, from zero at each valley to the chosen maximum. Edge waves lift the bottom edge and lower the top edge by up to the chosen depth; the ring is narrower there. A zero count or depth disables that wave effect.</small>
+            <label><span>Flat bottom for bed contact</span><input type="checkbox" checked={flatBottom} onChange={event => setFlatBottom(event.target.checked)} /></label>
+            <small id="rim-wave-note">Side bulges add thickness outward, from zero at each valley to the chosen maximum. Edge waves lower the top edge by up to the chosen depth. Flat bottom keeps the lower rim level for bed contact; disable it to restore waves on both rims. A zero count or depth disables that wave effect.</small>
         </div></details>
         <details open><summary>Marker</summary><div className="control-grid">
             <label>

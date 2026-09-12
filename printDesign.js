@@ -89,6 +89,7 @@ export const PRINT_DESIGNS = Object.freeze([
         outerWaveHeightMm: 1,
         rimWaveCount: 6,
         rimWaveHeightMm: 1,
+        flatBottom: true,
         summary: "Curved tooth, tactile locator, and full-height maze passages.",
         qualification: "Accepted standard model.",
         geometryStyle: "comfort",
@@ -266,7 +267,7 @@ export const validatePrintDesign = (design, maze) => {
     }
     if (!Number.isFinite(design.boreDiameterMm) || design.boreDiameterMm < 14.1 || design.boreDiameterMm > 22.6) errors.push("Use a bore from the 14.1–22.6 mm ring-size chart.");
     const warnings = decorationWarnings(design);
-    if (rimCount > 0 && rimHeight > 0) {
+    if (rimCount > 0 && rimHeight > 0 && !design.flatBottom) {
         warnings.push("Wavy lower rim: no continuous flat bed footprint. Review adhesion and support in the slicer; this geometry is not print-qualified.");
     }
     const positiveFields = [

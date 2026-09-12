@@ -5,15 +5,15 @@ export const DECORATION_DEFAULTS = Object.freeze({
     markerDepthMm: 1,
     bandCount: 4,
     bandStyle: "wavy",
-    bandWidthMm: 1,
-    bandDepthMm: 1,
+    bandWidthMm: 0.6,
+    bandDepthMm: 0.15,
     bandWaveCount: 6,
     bandWaveAlignmentDeg: 0,
     bandWaveAmplitudeMm: 1,
     bandPairSpacingMm: 1.4,
     // null follows H/4 as the physical height changes; explicit values are mm.
     bandDistanceMm: null,
-    sleeveText: "a - maze - ring",
+    sleeveText: "A - MAZE - RING",
     sleeveTextSecond: "",
     textSizeMm: 2.5,
     textDepthMm: -0.2,
@@ -331,24 +331,20 @@ export const decorateSleeve = (
                             ? d.bandWaveAmplitudeMm *
                               Math.sin(d.bandWaveCount * theta + (d.bandWaveAlignmentDeg % 360) * Math.PI / 180)
                             : 0);
-                    for (const [dr, dy] of [
-                        [
-                            d.bandDepthMm > 0 ? -0.15 : d.bandDepthMm,
-                            -d.bandWidthMm / 2,
-                        ],
-                        [
-                            d.bandDepthMm > 0 ? d.bandDepthMm : 0.16,
-                            -d.bandWidthMm / 2,
-                        ],
-                        [
-                            d.bandDepthMm > 0 ? d.bandDepthMm : 0.16,
-                            d.bandWidthMm / 2,
-                        ],
-                        [
-                            d.bandDepthMm > 0 ? -0.15 : d.bandDepthMm,
-                            d.bandWidthMm / 2,
-                        ],
-                    ])
+                    // Extend the taper through the embedded root so the width at
+                    // the sleeve surface is exactly the requested line width.
+                    // Both axial sides taper: export maps model Y to bed-up Z.
+                    // Negative depth retains the original rectangular cutter.
+                    const half = d.bandWidthMm / 2;
+                    const tipHalf = Math.min(0.05, half / 3);
+                    const embed = Math.min(0.15, Math.abs(d.bandDepthMm));
+                    const rootHalf = half + embed * (half - tipHalf) / d.bandDepthMm;
+                    const section = d.bandDepthMm > 0
+                        ? [[-embed, -rootHalf], [d.bandDepthMm, -tipHalf],
+                           [d.bandDepthMm, tipHalf], [-embed, rootHalf]]
+                        : [[d.bandDepthMm, -half], [0.16, -half],
+                           [0.16, half], [d.bandDepthMm, half]];
+                    for (const [dr, dy] of section)
                         g.vertices.push(
                             new THREE.Vector3(
                                 (surface + dr) * Math.cos(theta),

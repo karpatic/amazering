@@ -6,7 +6,8 @@ A static, no-build-step maze editor that maps one editable maze directly onto a
 ## Run locally
 
 Open `index.html` with VS Code Live Server, or serve this directory with a
-simple static server and visit its root. All asset paths are relative so the
+simple static server and visit its root. `./scripts/preview.sh` serves the app at
+`http://127.0.0.1:5503/`. All asset paths are relative so the
 same files work locally and under the GitHub Pages `/amazering/` subpath.
 
 The app intentionally keeps its published Bundless Babel integration in
@@ -38,9 +39,12 @@ mesh overlaps need slicer review before multicolor printing.
 
 The 3D panel offers None or nine tooth-marker silhouettes, defaulting to a raised
 heart. Signed marker, band and text depths raise or actually engrave the sleeve.
-The new aesthetic awaiting Carlos’s approval uses four 1 mm wavy bands at +1 mm,
-six cycles with 1 mm up/down travel, six 1 mm side bulges and six 1 mm inward
-edge dips. Exact lowercase `a - maze - ring` is engraved 0.2 mm at 2.5 mm font size.
+The new aesthetic awaiting Carlos’s approval uses four 0.6 mm wavy bands at
++0.15 mm with tapered sides, six cycles with 1 mm up/down travel, six 1 mm side bulges and six 1 mm inward
+top-edge dips and a flat lower rim for bed contact (lower waves remain
+configurable). Exact uppercase `A - MAZE - RING` is engraved 0.2 mm at 2.5 mm
+font size. See the [continuation audit](docs/subtle-band-verification.md) for
+sliced evidence and unresolved printability limitations.
 Band count supports 0–5; pairs expose spacing and distance controls. Counts 1,
 3 and 5 place independent text drafts above/below the center band. Other counts
 retain the second draft while showing the first at the middle. Nominal fit

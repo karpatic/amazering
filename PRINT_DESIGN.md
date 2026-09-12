@@ -200,13 +200,13 @@ approves the default aesthetic.** Approval screenshots are separate evidence.
 | --- | --- | --- |
 | Marker | Heart, +1 mm | None or existing silhouettes; depth −0.2…+1 mm |
 | Decorative bands | 4, wavy | 0–5 bands |
-| Line width / relief | 1 mm / +1 mm | Width 0.4…3 mm up/down; depth −0.2…+1 mm outward |
+| Line width / relief | 0.6 mm / +0.15 mm, tapered raised sides | Width 0.4…3 mm up/down; depth −0.2…+1 mm outward |
 | Line waves / waviness | 6 / 1 mm | 1–16 cycles; 0…3 mm above and below centerline |
 | Distance from center | H/4 = 3.75 mm | Blank follows sleeve height; explicit 0…20 mm to each line or pair midpoint |
 | Pair spacing | 1.4 mm | 0.1…20 mm, line center to line center |
 | Side bulges | 6, 1 mm outward | 0–32; 0…3 mm added to sleeve sides |
-| Top and bottom edge waves | 6, 1 mm inward dip per rim | 0–32; 0…1 mm; bottom rises and top falls |
-| Sleeve text | `a - maze - ring` | Exact lowercase, centered opposite tooth; up to 96 supported characters per line |
+| Rim waves | 6, 1 mm inward top dip; flat bottom enabled | 0–32; 0…1 mm; disable Flat bottom to wave both rims |
+| Sleeve text | `A - MAZE - RING` | Exact uppercase default; custom casing retained, centered opposite tooth; up to 96 supported characters per line |
 | Second text draft | Blank | Shown below center band for counts 1, 3, 5; retained when hidden |
 | Font size / depth | 2.5 mm / −0.2 mm | Font 0.5…10 mm; depth −0.2…+1 mm |
 
@@ -249,7 +249,7 @@ was added. A protective cylinder retains the existing 0.55 mm nominal floor
 for overlapping cutters; cuts reference one original surface and do not add.
 
 A wavy lower rim lacks a continuous flat bed footprint. Review adhesion,
-overhangs, bridging, supports and removal near moving gaps. Fine lowercase
+overhangs, bridging, supports and removal near moving gaps. Fine engraved
 strokes and counters at 2.5 mm font size may disappear or fill in with the
 0.4 mm nozzle. Raised features remain embedded, overlapping multipart volumes;
 STL is not a single Boolean union and filament ownership needs slicer review.
@@ -289,3 +289,15 @@ current maze/view. Promotion evidence: `/tmp/hermes-verify-standard-model-m154ao
 Superseded trial dimensions, previous warnings and iteration logs are kept in
 [the design history](docs/print-design-history.md), not presented as current
 model specifications. No old exports or rollback history were deleted.
+
+### September 12 continuation: subtle bands and bed contact
+
+Author: Codex app agent — 2026-09-12
+
+Current defaults supersede the earlier aesthetic measurements above: four
+0.6 mm bands at +0.15 mm with tapered sides, exact `A - MAZE - RING`, and a
+flat lower sleeve rim. Lower waves remain available by disabling Flat bottom.
+The heart, engraving depth, wave alignment, and mechanical geometry are retained.
+See [the continuation audit](docs/subtle-band-verification.md) for actual swept
+underside, sampled fine-line survival, and the remaining inner-tube layer-start
+limitation in the inspected slicing profile.
