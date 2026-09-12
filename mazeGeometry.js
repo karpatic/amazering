@@ -206,6 +206,7 @@ export const createMazeMaterials = () => {
     return {
         materials: {
             ring: new THREE.MeshPhongMaterial({ color: 0x202020 }),
+            outerRing: new THREE.MeshPhongMaterial({ color: 0x202020, transparent: true, opacity: 0.35 }),
             gold: new THREE.MeshPhongMaterial({ map: goldTexture }),
             entrance: new THREE.MeshPhongMaterial({ color: 0x00ff00 }),
             exit: new THREE.MeshPhongMaterial({ color: 0xff0000 }),
@@ -336,7 +337,7 @@ const createKey = (group, placement, design, dimensions, materials) => {
             depth: design.keySleeveAxialWidthMm,
             bevelEnabled: false,
         });
-        const cover = new THREE.Mesh(coverGeometry, materials.ring);
+        const cover = new THREE.Mesh(coverGeometry, materials.outerRing);
         cover.name = "key-sleeve";
         cover.position.y = design.keySleeveAxialWidthMm / 2;
         cover.rotation.x = Math.PI / 2;
@@ -366,7 +367,7 @@ const createKey = (group, placement, design, dimensions, materials) => {
         design.outerWaveCount,
         design.outerWaveHeightMm,
     );
-    const band = new THREE.Mesh(bandGeometry, materials.ring);
+    const band = new THREE.Mesh(bandGeometry, materials.outerRing);
     band.name = "key-sleeve";
     assembly.add(band);
 
