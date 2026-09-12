@@ -2,119 +2,100 @@
 // All relief is solid geometry. Engravings share the original sleeve reference,
 // so overlapping cuts take their union, never accumulating radial depths.
 export const DECORATION_DEFAULTS = Object.freeze({
-    markerDepthMm: 0.4,
-    bandCount: 2,
-    bandStyle: "straight",
-    bandWidthMm: 0.6,
-    bandDepthMm: 0.25,
+    markerDepthMm: 1,
+    bandCount: 4,
+    bandStyle: "wavy",
+    bandWidthMm: 1,
+    bandDepthMm: 1,
     bandWaveCount: 6,
-    bandWaveAmplitudeMm: 0.35,
-    sleeveText: "AMAZE",
+    bandWaveAmplitudeMm: 1,
+    bandPairSpacingMm: 1.4,
+    // null follows H/4 as the physical height changes; explicit values are mm.
+    bandDistanceMm: null,
+    sleeveText: "a - maze - ring",
+    sleeveTextSecond: "",
     textSizeMm: 2.5,
-    textDepthMm: 0.25,
+    textDepthMm: -0.2,
 });
 export const decorationValues = (d) => ({ ...DECORATION_DEFAULTS, ...d });
-export const decorationBounds = (d) => {
-    d = decorationValues(d);
-    const rim = d.rimWaveCount > 0 ? d.rimWaveHeightMm : 0;
-    const usable = d.keySleeveAxialWidthMm - 2 * (rim + 0.65);
-    const amplitude = d.bandStyle === "wavy" ? d.bandWaveAmplitudeMm : 0;
-    const bandEnvelope = d.bandWidthMm + 2 * amplitude;
-    const arcLimit =
-        Math.PI *
-        (d.boreDiameterMm / 2 +
-            d.tubeWallThicknessMm +
-            d.wallProjectionMm +
-            d.keySleeveClearanceMm +
-            d.keySleeveRadialThicknessMm) *
-        0.8;
-    const unitWidth = textMetrics(d.sleeveText, 1).width;
-    return {
-        arcLimit,
-        bandWidthMax: Math.min(1.2, usable / 4 - 2 * amplitude),
-        amplitudeMax: Math.min(0.8, (usable / 4 - d.bandWidthMm) / 2),
-        textSizeMax: Math.min(
-            4,
-            unitWidth ? arcLimit / unitWidth : 4,
-            d.bandCount === 2 ? usable - 2 * bandEnvelope - 0.8 : usable,
-        ),
-        usable,
-        bandEnvelope,
-    };
+export const hasCenterBand = (d) => [1, 3, 5].includes(d.bandCount);
+export const bandCenters = (input) => {
+    const d = decorationValues(input), h = d.keySleeveAxialWidthMm;
+    const distance = d.bandDistanceMm ?? h / 4, halfPair = d.bandPairSpacingMm / 2;
+    switch (d.bandCount) {
+        case 0: return [];
+        case 1: return [0];
+        case 2: return [-distance, distance];
+        case 3: return [-h / 3, 0, h / 3];
+        case 4: return [-distance-halfPair, -distance+halfPair, distance-halfPair, distance+halfPair];
+        case 5: return [-distance-halfPair, -distance+halfPair, 0, distance-halfPair, distance+halfPair];
+        default: return [];
+    }
+};
+export const textLines = (input) => {
+    const d = decorationValues(input);
+    if (!hasCenterBand(d)) return [{text:d.sleeveText, offset:0}];
+    const neighbors = bandCenters(d).filter(v => v > 0);
+    const offset = neighbors.length ? Math.min(...neighbors) / 2 : d.keySleeveAxialWidthMm / 4;
+    return [{text:d.sleeveText, offset}, {text:d.sleeveTextSecond, offset:-offset}];
 };
 export const textMetrics = (text, size) => {
     const font = globalThis.decorationFont;
-    if (!font) return { width: 0 };
+    if (!font) return { width: 0, height: 0 };
     const shapes = font.generateShapes(text, size);
     const points = shapes.flatMap((s) => s.getPoints(6));
+    return { shapes,
+        width: points.length ? Math.max(...points.map(p=>p.x))-Math.min(...points.map(p=>p.x)) : 0,
+        height: points.length ? Math.max(...points.map(p=>p.y))-Math.min(...points.map(p=>p.y)) : 0,
+    };
+};
+export const decorationBounds = (input) => {
+    const d = decorationValues(input);
+    const rim = d.rimWaveCount > 0 ? d.rimWaveHeightMm : 0;
     return {
-        shapes,
-        width: points.length
-            ? Math.max(...points.map((p) => p.x)) -
-              Math.min(...points.map((p) => p.x))
-            : 0,
+        arcLimit: 2 * Math.PI * (d.boreDiameterMm/2 + d.tubeWallThicknessMm + d.wallProjectionMm + d.keySleeveClearanceMm + d.keySleeveRadialThicknessMm),
+        usable: d.keySleeveAxialWidthMm - 2*(rim + .65),
+        bandEnvelope: d.bandWidthMm + 2*(d.bandStyle === 'wavy' ? d.bandWaveAmplitudeMm : 0),
     };
 };
 export const validateDecorations = (input) => {
-    const d = decorationValues(input),
-        b = decorationBounds(d),
-        errors = [];
+    const d = decorationValues(input), errors = [];
     for (const [key, label, min, max] of [
-        ["markerDepthMm", "Marker depth", -0.2, 0.6],
-        ["bandDepthMm", "Band depth", -0.2, 0.6],
-        ["textDepthMm", "Text depth", -0.2, 0.6],
-        ["bandWidthMm", "Line width", 0.4, b.bandWidthMax],
-        ["bandWaveAmplitudeMm", "Line wave amplitude", 0, b.amplitudeMax],
-        ["textSizeMm", "Text font size", 2, b.textSizeMax],
+        ['markerDepthMm','Marker depth',-.2,1], ['bandDepthMm','Band depth',-.2,1],
+        ['textDepthMm','Text depth',-.2,1], ['bandWidthMm','Line width',.4,3],
+        ['bandWaveAmplitudeMm','Line waviness',0,3], ['textSizeMm','Font size',.5,10],
+        ['bandPairSpacingMm','Pair spacing',.1,20], ['bandDistanceMm','Distance from center',0,20],
     ]) {
-        if (key.startsWith("band") && !d.bandCount) continue;
-        if (key === "bandWaveAmplitudeMm" && d.bandStyle !== "wavy") continue;
-        if (
-            key.startsWith("text") &&
-            (d.bandCount === 1 || !d.sleeveText.trim())
-        )
-            continue;
-        if (key === "markerDepthMm" && d.markerShape === "none") continue;
-        if (
-            !Number.isFinite(d[key]) ||
-            d[key] < min - 1e-8 ||
-            d[key] > max + 1e-8
-        )
-            errors.push(
-                `${label}: use ${min}–${Math.max(min, max).toFixed(2)} mm; decorations must fit between the rims.`,
-            );
+        if (key.startsWith('band') && !d.bandCount) continue;
+        if (key==='bandPairSpacingMm' && ![4,5].includes(d.bandCount)) continue;
+        if (key==='bandDistanceMm' && (![2,4,5].includes(d.bandCount) || d[key]===null)) continue;
+        if (key==='bandWaveAmplitudeMm' && d.bandStyle!=='wavy') continue;
+        if (key==='markerDepthMm' && d.markerShape==='none') continue;
+        if (!Number.isFinite(d[key]) || d[key]<min || d[key]>max) errors.push(`${label}: use ${min}–${max} mm.`);
     }
-    if (![0, 1, 2].includes(d.bandCount))
-        errors.push("Choose 0, 1 or 2 decorative bands.");
-    if (!["straight", "wavy"].includes(d.bandStyle))
-        errors.push("Choose straight or wavy lines.");
-    if (
-        d.bandCount &&
-        d.bandStyle === "wavy" &&
-        (!Number.isInteger(d.bandWaveCount) ||
-            d.bandWaveCount < 1 ||
-            d.bandWaveCount > 16)
-    )
-        errors.push("Use 1–16 whole line waves.");
-    if (d.bandCount !== 1 && d.sleeveText.trim()) {
-        if (!/^[A-Za-z0-9 .,!?'&-]{1,24}$/.test(d.sleeveText))
-            errors.push(
-                "Text supports 1–24 Latin letters, digits, spaces and . , ! ? apostrophe & -",
-            );
-        const maxWidth =
-            Math.PI *
-            (d.boreDiameterMm / 2 +
-                d.tubeWallThicknessMm +
-                d.wallProjectionMm +
-                d.keySleeveClearanceMm +
-                d.keySleeveRadialThicknessMm) *
-            0.8;
-        if (textMetrics(d.sleeveText, d.textSizeMm).width > maxWidth)
-            errors.push(
-                `Text exceeds the ${maxWidth.toFixed(1)} mm arc limit. Shorten it or reduce font size.`,
-            );
+    if (![0,1,2,3,4,5].includes(d.bandCount)) errors.push('Choose 0–5 whole decorative bands.');
+    if (!['straight','wavy'].includes(d.bandStyle)) errors.push('Choose straight or wavy lines.');
+    if (d.bandCount && d.bandStyle==='wavy' && (!Number.isInteger(d.bandWaveCount) || d.bandWaveCount<1 || d.bandWaveCount>16)) errors.push('Use 1–16 whole line waves.');
+    for (const {text} of textLines(d)) {
+        if (typeof text!=='string' || !/^[A-Za-z0-9 .,!?'&-]{0,96}$/.test(text)) errors.push('Each text line supports up to 96 Latin letters, digits, spaces and . , ! ? apostrophe & -');
     }
     return errors;
+};
+// Nominal layout recommendations never change requested geometry or block export.
+export const decorationWarnings = (input) => {
+    const d=decorationValues(input), b=decorationBounds(d), warnings=[];
+    if (validateDecorations(d).length) return warnings;
+    const centers=bandCenters(d).sort((a,b)=>a-b);
+    if (d.bandDepthMm && centers.some(c=>Math.abs(c)+b.bandEnvelope/2>b.usable/2)) warnings.push('Decorative bands approach or extend past the rim margin. Inspect their attachment and overhangs; requested dimensions are retained.');
+    if (d.bandDepthMm && centers.some((c,i)=>i && c-centers[i-1]<d.bandWidthMm+.2)) warnings.push('Decorative bands overlap or leave less than 0.2 mm between lines. Increase center-to-center spacing for distinct printed bands.');
+    for (const [i,line] of textLines(d).entries()) {
+        if (!line.text.trim() || !d.textDepthMm) continue;
+        const m=textMetrics(line.text,d.textSizeMm), label=hasCenterBand(d)?`Text line ${i+1}`:'Text';
+        if (m.width>b.arcLimit*.9) warnings.push(`${label} spans ${m.width.toFixed(1)} mm around a ${b.arcLimit.toFixed(1)} mm circumference; it may meet itself or the marker. Requested font size is retained.`);
+        if (Math.abs(line.offset)+m.height/2>b.usable/2 || (d.bandDepthMm && centers.some(c=>Math.abs(c-line.offset)<(b.bandEnvelope+m.height)/2+.2))) warnings.push(`${label} approaches the bands or rim margin at ${d.textSizeMm} mm font size. Inspect the overlap; font size is unchanged.`);
+        if (d.textSizeMm<3) warnings.push(`${label}: fine bold strokes and counters may be lost with a 0.4 mm nozzle. Review sliced lettering.`);
+    }
+    return warnings;
 };
 export const solidFromGeometry = (geometry) => {
     const { Manifold, Mesh } = globalThis.decorationKernel;
@@ -237,13 +218,12 @@ export const decorateSleeve = (
     materials,
 ) => {
     const d = decorationValues(input),
-        bounds = decorationBounds(d),
         ro = dimensions.keySleeveOuterRadiusMm;
     const center = baseY + d.keySleeveAxialWidthMm / 2;
     const anyRelief =
         (d.markerShape !== "none" && d.markerDepthMm) ||
         (d.bandCount && d.bandDepthMm) ||
-        (d.bandCount !== 1 && d.sleeveText.trim() && d.textDepthMm);
+        (textLines(d).some(line => line.text.trim()) && d.textDepthMm);
     if (!anyRelief) return;
     const resources = [];
     const keep = (s) => {
@@ -309,13 +289,7 @@ export const decorateSleeve = (
                 d.outerWaveCount * 48,
                 d.bandWaveCount * 32,
             );
-            const centers =
-                d.bandCount === 1
-                    ? [0]
-                    : [
-                          -(bounds.usable - bounds.bandEnvelope) / 2,
-                          (bounds.usable - bounds.bandEnvelope) / 2,
-                      ];
+            const centers = bandCenters(d);
             for (const offset of centers) {
                 const g = new THREE.Geometry();
                 for (let i = 0; i < segments; i++) {
@@ -383,8 +357,9 @@ export const decorateSleeve = (
                 else raised.push({ solid, name: "decorative-bands" });
             }
         }
-        if (d.bandCount !== 1 && d.sleeveText.trim() && d.textDepthMm) {
-            const { shapes } = textMetrics(d.sleeveText, d.textSizeMm);
+        for (const line of textLines(d)) {
+            if (!line.text.trim() || !d.textDepthMm) continue;
+            const { shapes } = textMetrics(line.text, d.textSizeMm);
             const g = new THREE.ShapeGeometry(shapes);
             g.computeBoundingBox();
             const mid = g.boundingBox.getCenter(new THREE.Vector3());
@@ -393,14 +368,14 @@ export const decorateSleeve = (
             const centered = shapes.map((s) => {
                 const pts = s.extractPoints(8);
                 const shape = polygonShape(
-                    pts.shape.map((p) => [p.x - mid.x, p.y - mid.y]),
+                    pts.shape.map((p) => [p.x - mid.x, p.y - mid.y + line.offset]),
                 );
                 shape.holes = pts.holes.map(
                     (h) =>
                         new THREE.Path(
                             h.map(
                                 (p) =>
-                                    new THREE.Vector2(p.x - mid.x, p.y - mid.y),
+                                    new THREE.Vector2(p.x - mid.x, p.y - mid.y + line.offset),
                             ),
                         ),
                 );

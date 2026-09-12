@@ -55,7 +55,8 @@ const ThreeDMazeGenerator = ({ maze, design, controls }) => {
         automaticTransparencyRef.current = false;
         updateTransparency(Number(transparencyInputRef.current.value));
     };
-    const isDesignValid = validatePrintDesign(design, maze).errors.length === 0;
+    const validation = validatePrintDesign(design, maze);
+    const isDesignValid = validation.errors.length === 0;
 
     useEffect(() => {
         const container = containerRef.current;
@@ -242,8 +243,17 @@ const ThreeDMazeGenerator = ({ maze, design, controls }) => {
 
     return (
         <div className="preview-content">
+            <div className="preview-stage">
+                {(!maze || !isDesignValid || !!geometryError) && (
+                    <div className="preview-empty">
+                        {!maze
+                            ? "Generate a maze to build the 3D ring."
+                            : geometryError || validation.errors.join(" ")}
+                    </div>
+                )}
+                <div id="threejs-container" ref={containerRef}></div>
+            </div>
             <div className="panel-actions">
-                {controls}
                 <details className="appearance-controls" open><summary>Appearance</summary><div className="transparency-control">
                     <label htmlFor="outer-transparency">Outer band transparency</label>
                     <output ref={transparencyOutputRef} htmlFor="outer-transparency">15%</output>
@@ -261,6 +271,7 @@ const ThreeDMazeGenerator = ({ maze, design, controls }) => {
                         Fades with rotation until you adjust or press the slider.</small>
                 </div>
                 </details>
+                {controls}
                 <div className="button-group">
                     <button
                         id="exportbtn"
@@ -287,20 +298,11 @@ const ThreeDMazeGenerator = ({ maze, design, controls }) => {
                     </button>
                 </div>
                 {!isDesignValid && (
-                    <span className="action-hint">Resolve the size error to rebuild or export.</span>
+                    <span className="action-hint">Resolve the input error to rebuild or export.</span>
                 )}
             </div>
             {geometryError && <p role="alert" className="design-error">{geometryError} Preview and export paused until corrected.</p>}
-            <div className="preview-stage">
-                {(!maze || !isDesignValid || !!geometryError) && (
-                    <div className="preview-empty">
-                        {!maze
-                            ? "Generate a maze to build the 3D ring."
-                            : "These dimensions are invalid. Correct them to resume the preview."}
-                    </div>
-                )}
-                <div id="threejs-container" ref={containerRef}></div>
-            </div>
+
         </div>
     );
 };

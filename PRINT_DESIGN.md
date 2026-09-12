@@ -22,8 +22,8 @@ not an experimental preset. The older reference preset is retired.
   underside means the working face is not vertically symmetric; the unrounded
   tip spans Z 7.1–9.1 mm. Exposed edges retain the small bevels/rounding.
 - Tactile locator: gold in the preview, centered behind the tooth at Z 7.5 mm.
-  The default dot silhouette spans 3.6 mm and follows the sleeve curvature.
-  Its decorative relief now defaults to +0.4 mm; None and engraving are available.
+  Marker silhouettes follow the sleeve curvature within the existing 3.6 mm envelope.
+  The current decorative default is a heart at +1 mm; None and engraving are available.
 - Nominal running gaps: 0.18 mm sleeve-to-wall, 0.18 mm tooth-to-tube, and
   0.25 mm axial clearance allowance in placement checks.
 - Reference printing setup: Bambu Lab P1S, PLA, 0.4 mm nozzle, about 0.2 mm layers.
@@ -95,7 +95,7 @@ Rows are bounded to 2–6 and columns to 6–12 whole numbers. Height is at leas
 `rows × 5 + 1.2` mm and at most 31.2 mm. Generate raises height when more rows
 need space, but does not automatically shorten it for fewer rows. A shorter
 height draft can also be applied together with a compatible new row count.
-Sleeve height is `0.75 × (height − 1.2)` mm, with the tooth and tactile dot at
+Sleeve height is `0.75 × (height − 1.2)` mm, with the tooth and tactile marker at
 its midpoint. The default remains exactly 21.2 / 15 / 7.5 mm. Radial walls,
 tooth profile and running gaps are unchanged. Column limits retain positive
 shared-envelope tangential room at the chart's smallest bore; wall-dependent
@@ -106,7 +106,7 @@ resting-placement warnings remain authoritative, not a printability guarantee.
 Author: Codex app agent — September 12, 2026.
 
 The 3D settings include 0–32 whole exterior waves and an outward wave height
-of 0–3 mm. Both default to zero; either zero leaves the accepted mesh unchanged.
+of 0–3 mm. The current defaults are six waves and 1 mm; either zero disables this effect.
 Height is radial trough-to-crest depth, not axial height. A cosine profile adds
 material outside the sleeve, with a trough behind the tooth. The axial band
 height, inner mating facets/chamfers, maze, working tooth and locator stay fixed.
@@ -134,8 +134,8 @@ These checks do not qualify sliced toolpaths, physical fit or physical printing.
 Author: Codex app agent — September 12, 2026.
 
 Independent rim/edge controls provide 0–32 whole waves and 0–1 mm axial height.
-Both default to zero; either zero disables only rim waves. Radial count/height
-remain independent, with their existing defaults, outward shape and 0–3 mm range.
+The current defaults are six waves and 1 mm; either zero disables only rim waves. Radial count/height
+remain independent, with their outward shape and 0–3 mm range.
 The translucent outer-band preview from `96d1ad7` is retained.
 
 For rim count N and height h, the inward inset at angle θ is
@@ -185,73 +185,83 @@ local files). The isolated-band diagnostic screenshots use the actual preview
 mesh and unchanged translucent material, with other parts hidden only in the
 test session so both rims can be inspected.
 
-## Sleeve decorations and compact controls
+## Sleeve decorations and compact controls — aesthetic awaiting approval
 
 Author: Codex app agent — September 12, 2026.
 
-Only decorative defaults changed. Bore 18 mm, tube 21.2/0.6 mm, sleeve
-15/0.8 mm, tooth, maze wall profiles, running gaps and both existing wave-mode
-defaults remain fixed. Shape, Marker, Decorative bands, Text and Appearance
-are native disclosure groups below the prominent preview. Maze edits, dimension
-drafts, orbit/zoom and paused rotation survive decoration changes. Appearance
-retains the synchronized 0–30% automatic fade and manual slider override.
+Only decoration defaults changed. Bore 18 mm, tube 21.2/0.6 mm, sleeve
+15/0.8 mm, tooth, maze profiles and running gaps remain unchanged. The mechanical
+standard remains accepted; the new default aesthetic is for Carlos’s approval.
+The original guide SVG screenshot assets are preserved byte-for-byte, labeled
+as an earlier two-band example. **Do not remake guide images before Carlos
+approves the default aesthetic.** Approval screenshots are separate evidence.
 
-| Decoration input | Default | Limits / step |
+| Input | Current default | Range / meaning |
 | --- | --- | --- |
-| Marker shape | Rounded dot | None or the existing nine silhouettes |
-| Marker signed depth | +0.40 mm | −0.20…+0.60 mm / 0.05 |
-| Decorative band quantity | 2 | 0, 1, 2 |
-| Line style | Straight | Straight or wavy |
-| Line width (axial) | 0.60 mm | 0.40…1.20 mm / 0.05, reduced by fit bound |
-| Band signed depth | +0.25 mm | −0.20…+0.60 mm / 0.05 |
-| Line waves per turn | 6 | 1…16 whole cycles |
-| Line wave amplitude | ±0.35 mm | 0…±0.80 mm / 0.05, reduced by fit bound |
-| Sleeve text | AMAZE | Up to 24 Latin letters, digits, spaces, `. , ! ? ' & -` |
-| Font size | 2.5 mm | 2…4 mm / 0.1, reduced by axial and arc fit bounds |
-| Text signed depth | +0.25 mm | −0.20…+0.60 mm / 0.05 |
+| Marker | Heart, +1 mm | None or existing silhouettes; depth −0.2…+1 mm |
+| Decorative bands | 4, wavy | 0–5 bands |
+| Line width / relief | 1 mm / +1 mm | Width 0.4…3 mm up/down; depth −0.2…+1 mm outward |
+| Line waves / waviness | 6 / 1 mm | 1–16 cycles; 0…3 mm above and below centerline |
+| Distance from center | H/4 = 3.75 mm | Blank follows sleeve height; explicit 0…20 mm to each line or pair midpoint |
+| Pair spacing | 1.4 mm | 0.1…20 mm, line center to line center |
+| Side bulges | 6, 1 mm outward | 0–32; 0…3 mm added to sleeve sides |
+| Top and bottom edge waves | 6, 1 mm inward dip per rim | 0–32; 0…1 mm; bottom rises and top falls |
+| Sleeve text | `a - maze - ring` | Exact lowercase, centered opposite tooth; up to 96 supported characters per line |
+| Second text draft | Blank | Shown below center band for counts 1, 3, 5; retained when hidden |
+| Font size / depth | 2.5 mm / −0.2 mm | Font 0.5…10 mm; depth −0.2…+1 mm |
 
-Positive depths add curved solid relief; negative depths remove sleeve material;
-zero adds no relief. Marker None removes only the decorative locator. Lettering
-uses the local Helvetiker Bold outline, including counters, wrapped around the
-sleeve. Its visible outline is centered both axially and at π from the unchanged
-tooth reference, regardless of marker shape. Font size is the physical font
-scale; a particular glyph's visible height can differ. Blank text is allowed.
-A center band suppresses text even at zero band depth, retaining the complete
-draft (including an invalid draft) for recovery with 0 or 2 bands.
+Here H is sleeve height, 15 mm by default. Positions measured upward from the
+sleeve bottom are: count 0 none; count 1 H/2; count 2 H/4 and 3H/4;
+count 3 H/6, H/2 and 5H/6; count 4 two pairs centered at H/4 and 3H/4;
+count 5 those four plus H/2. Distance edits move the two singles or pair
+midpoints symmetrically from H/2. Pair spacing moves each pair’s lines equally
+about its midpoint. At default height the four centerlines are at 3.05, 4.45,
+10.55 and 11.95 mm above the bottom. Their common wave phase preserves a
+0.4 mm up/down gap within each pair despite 1 mm line waviness.
 
-Two bands occupy symmetric edge regions. Their centerlines stay inside the worst
-rim inset with 0.65 mm margin. Define usable height U = sleeve height minus
-2 × (active rim height + 0.65 mm), and band envelope E = line width + twice the
-active line amplitude. Each band must fit within U/4. The central text region
-with two bands is U − 2E − 0.8 mm. Text is also limited to a centered arc of
-0.8π times the nominal outer radius (144°). Input maxima follow these bounds;
-invalid combinations pause preview and exports rather than shrinking the tooth,
-changing fit or silently altering decorations. Shape inputs retain the existing
-2–6 rows, 6–12 columns, chart sizes 14.1–22.6 mm, row-dependent height through
-31.2 mm, radial 0–32 / 0–3 mm, and rim 0–32 / 0–1 mm limits and steps.
+Counts 1, 3 and 5 expose independent upper and lower text drafts. For one
+band, text centers are at H/4 and 3H/4; with neighboring bands, each text line
+is halfway between the center band and its nearest neighbor. Counts 0, 2 and
+4 center the first draft and retain the second invisibly. Blank omits a line.
+No draft or requested font size is silently changed. Small or crowded layouts
+can overlap; this is a specific advisory rather than a nominal fit blocker.
 
-All engraving cutters reference the original sleeve, so overlaps remove their
-union, not accumulated depths. A protective cylinder reserves a nominal
-0.55 mm radial wall (>0.54 mm including its faceting), outside the unchanged
-mating radius. The −0.20 mm input limit ordinarily leaves about 0.60 mm.
-Raised solids follow the radial-wave surface and embed 0.15 mm into the sleeve;
-attachment is checked as positive-volume intersection. They remain overlapping
-multipart volumes, like the existing tooth attachment. Assign filament ownership
-and review fine strokes in the slicer. There is no negative-colored overlay.
+The prior generic invalid-dimensions error was caused by text length reducing
+the dynamic maximum font size below an unchanged draft value. Static finite
+input limits now replace those dynamic blockers. Nominal rim margins, band
+spacing, text/band proximity, fine type, and text approaching a full turn are
+nonblocking warnings. The old 144° text arc restriction is removed. Text may
+use the full circumference and beyond if the actual solid kernel accepts it;
+wrapping back onto itself or approaching the marker is explicitly warned.
+Finite values, supported text, bounded input work, maze topology, mechanical
+clearances, closed/oriented triangles, actual Boolean success and embedded
+attachment remain blockers. Failed rebuilds retain the old preview with the
+specific error and guard both export handlers against stale downloads.
 
-The shared geometry goes to preview, STL and multipart 3MF. None, engraved or
-zero-relief features create no empty 3MF resources; engravings belong to Outer
-ring. Runtime conversion welds sub-micron duplicate intersections and rejects
-collapsed triangles or non-closed/non-oriented results. Failed rebuilds keep the
-last preview under an error overlay and disable/guard both export handlers.
+Print-minded choices and limits: pair spacing is 1.4 mm instead of 1 mm so
+1 mm wide lines remain distinct. All requested wave counts are six and all
+requested wave sizes/marker/band relief reach 1 mm at the default height.
+The original conservative rim margin and text proximity checks can still
+warn at this aesthetic; dimensions are retained for review. The nominal
+sleeve stays 0.8 mm thick; −0.2 mm engraving leaves about 0.6 mm locally,
+**not** an untouched 0.8 mm residual wall. No bore, tooth or gap compensation
+was added. A protective cylinder retains the existing 0.55 mm nominal floor
+for overlapping cutters; cuts reference one original surface and do not add.
 
-The small collapsed Visual guide embeds two actual app-rendered screenshots,
-lightly annotated with Marker, Decorative bands and Text callouts. Views stack
-on mobile for legible labels. Sources and browser evidence are under
-`/tmp/amazering-decoration-evidence/`; the committed SVGs embed their source
-pixels and do not depend on temporary paths. See
-[decoration verification](docs/decoration-verification.md) for measured evidence.
-These are geometry/export checks, not sliced-toolpath or physical-print qualification.
+A wavy lower rim lacks a continuous flat bed footprint. Review adhesion,
+overhangs, bridging, supports and removal near moving gaps. Fine lowercase
+strokes and counters at 2.5 mm font size may disappear or fill in with the
+0.4 mm nozzle. Raised features remain embedded, overlapping multipart volumes;
+STL is not a single Boolean union and filament ownership needs slicer review.
+This aesthetic is **not print-qualified**.
+
+The panel order is rendering → Appearance → existing Visual guide → design
+inputs. Physical labels describe up/down line travel, inward rim dip and
+outward sleeve thickness. Native controls stay compact and responsive.
+Maze edits, size drafts, orbit/zoom, paused rotation, synchronized automatic
+0–30% transparency and manual override remain. STL and multipart 3MF share
+actual geometry. Verification and approval artifact paths are recorded in
+[decoration verification](docs/decoration-verification.md).
 
 ## Acceptance and verification boundaries
 

@@ -1,4 +1,4 @@
-import { DECORATION_DEFAULTS, decorationBounds, textMetrics } from './decorationGeometry.js?v=decorations';
+import { DECORATION_DEFAULTS, hasCenterBand } from './decorationGeometry.js?v=decorations';
 import { SVGMazeGenerator } from "./mazeGenerator.js?v=decorations";
 import { ThreeDMazeGenerator } from "./threeDGenerator.js?v=decorations";
 import {
@@ -122,13 +122,13 @@ const MazeGenerator = () => {
     const [rowsInput, setRowsInput] = useState("4");
     const [columnsInput, setColumnsInput] = useState("10");
     const [generationError, setGenerationError] = useState("");
-    const [markerShape, setMarkerShape] = useState("dot");
-    const [waveCountInput, setWaveCountInput] = useState("0");
-    const [waveHeightInput, setWaveHeightInput] = useState("0");
-    const [rimWaveCountInput, setRimWaveCountInput] = useState("0");
-    const [rimWaveHeightInput, setRimWaveHeightInput] = useState("0");
-    const [decorationDraft, setDecorationDraft] = useState(() => Object.fromEntries(Object.entries(DECORATION_DEFAULTS).map(([k,v])=>[k,String(v)])));
-    const decoration = Object.fromEntries(Object.entries(decorationDraft).map(([k,v])=>[k,['bandStyle','sleeveText'].includes(k)?v:parseInput(v)]));
+    const [markerShape, setMarkerShape] = useState("heart");
+    const [waveCountInput, setWaveCountInput] = useState("6");
+    const [waveHeightInput, setWaveHeightInput] = useState("1");
+    const [rimWaveCountInput, setRimWaveCountInput] = useState("6");
+    const [rimWaveHeightInput, setRimWaveHeightInput] = useState("1");
+    const [decorationDraft, setDecorationDraft] = useState(() => Object.fromEntries(Object.entries(DECORATION_DEFAULTS).map(([k,v])=>[k,v===null?"":String(v)])));
+    const decoration = Object.fromEntries(Object.entries(decorationDraft).map(([k,v])=>[k,['bandStyle','sleeveText','sleeveTextSecond'].includes(k)?v:k==='bandDistanceMm' && v===''?null:parseInput(v)]));
     const setDecoration = (key,value) => setDecorationDraft(current=>({...current,[key]:value}));
     const design = useMemo(() => withPhysicalHeight({
         ...getPrintDesign(STANDARD_DESIGN_ID),
@@ -194,7 +194,6 @@ const MazeGenerator = () => {
             {generationError && <p className="design-error" role="alert">{generationError}</p>}
         </>
     );
-    const bounds = decorationBounds(design);
     const numericDecoration = (key,label,min,max,step,disabled=false) => <label>
         <span>{label}</span><input type="number" min={min} max={Math.max(min,Math.floor(max*100)/100)} step={step}
             value={decorationDraft[key]} disabled={disabled}
@@ -202,6 +201,10 @@ const MazeGenerator = () => {
             onChange={event=>setDecoration(key,event.target.value)} /></label>;
     const sizeControls = (
         <div className="decoration-controls">
+        <details className="visual-guide"><summary>Visual guide</summary>
+            <figure><div className="guide-views"><img src="./docs/decoration-guide-marker.svg" alt="Actual model: heart marker behind the tooth and two wavy decorative bands near the edges." /><img src="./docs/decoration-guide-text.svg" alt="Opposite side of the same actual model: curved AMAZE lettering between the bands." /></div>
+            <figcaption>Earlier example · two wavy bands and raised lettering. Guide images await approval of the new default aesthetic.</figcaption></figure>
+        </details>
         <details open><summary>Shape</summary><div className="control-grid">
             <label>
                 <span>US ring size</span>
@@ -226,36 +229,34 @@ const MazeGenerator = () => {
                     onChange={(event) => setHeightInput(event.target.value)} />
             </label>
             <label>
-                <span>Radial exterior wave count (0 = none)</span>
+                <span>Side bulges around ring (count)</span>
                 <input type="number" min="0" max="32" step="1"
                     value={waveCountInput}
                     aria-invalid={!Number.isInteger(design.outerWaveCount) || design.outerWaveCount < 0 || design.outerWaveCount > 32}
                     onChange={(event) => setWaveCountInput(event.target.value)} />
             </label>
             <label>
-                <span>Radial wave height (mm, outward)</span>
+                <span>Outward bulge (mm added to sleeve sides)</span>
                 <input type="number" min="0" max="3" step="0.1"
                     value={waveHeightInput}
                     aria-invalid={!Number.isFinite(design.outerWaveHeightMm) || design.outerWaveHeightMm < 0 || design.outerWaveHeightMm > 3}
                     onChange={(event) => setWaveHeightInput(event.target.value)} />
             </label>
             <label>
-                <span>Rim/edge wave count (0 = none)</span>
+                <span>Waves around top &amp; bottom edges</span>
                 <input type="number" min="0" max="32" step="1"
                     value={rimWaveCountInput}
                     aria-invalid={!Number.isInteger(design.rimWaveCount) || design.rimWaveCount < 0 || design.rimWaveCount > 32}
                     onChange={(event) => setRimWaveCountInput(event.target.value)} />
             </label>
             <label>
-                <span>Axial rim wave height (mm)</span>
+                <span>Edge wave depth (mm inward dip of each rim)</span>
                 <input type="number" min="0" max="1" step="0.1"
                     value={rimWaveHeightInput} aria-describedby="rim-wave-note"
                     aria-invalid={!Number.isFinite(design.rimWaveHeightMm) || design.rimWaveHeightMm < 0 || design.rimWaveHeightMm > 1}
                     onChange={(event) => setRimWaveHeightInput(event.target.value)} />
             </label>
-            <small id="rim-wave-note">Each rim moves inward by 0–height mm (trough to crest),
-                symmetrically about the band middle. Either rim value at 0 disables rim waves;
-                radial waves are independent.</small>
+            <small id="rim-wave-note">Side bulges add thickness outward, from zero at each valley to the chosen maximum. Edge waves lift the bottom edge and lower the top edge by up to the chosen depth; the ring is narrower there. A zero count or depth disables that wave effect.</small>
         </div></details>
         <details open><summary>Marker</summary><div className="control-grid">
             <label>
@@ -266,34 +267,32 @@ const MazeGenerator = () => {
                     ))}
                 </select>
             </label>
-            {numericDecoration('markerDepthMm','Marker depth (mm)',-.2,.6,.05,markerShape==='none')}
-            <small>Locator behind the working tooth. None hides only the locator. Positive raises; negative engraves; zero has no relief.</small>
+            {numericDecoration('markerDepthMm','Marker depth (mm)',-.2,1,.05,markerShape==='none')}
+            <small>Locator behind the working tooth. None hides only the locator. Positive raises outward; negative cuts inward; zero has no relief.</small>
         </div></details>
         <details open><summary>Decorative bands</summary><div className="control-grid">
             <label><span>Quantity</span><select value={decorationDraft.bandCount} onChange={e=>setDecoration('bandCount',e.target.value)}>
-                <option value="0">0 · None</option><option value="1">1 · Center</option><option value="2">2 · Near edges</option></select></label>
+                <option value="0">0 · None</option><option value="1">1 · Center</option><option value="2">2 · Quarter positions</option><option value="3">3 · Even thirds</option><option value="4">4 · Two pairs</option><option value="5">5 · Two pairs + center</option></select></label>
             <label><span>Line style</span><select disabled={!design.bandCount} value={decorationDraft.bandStyle} onChange={e=>setDecoration('bandStyle',e.target.value)}>
                 <option value="straight">Straight</option><option value="wavy">Wavy</option></select></label>
-            {numericDecoration('bandWidthMm','Line width (mm)',.4,bounds.bandWidthMax,.05,!design.bandCount)}
-            {numericDecoration('bandDepthMm','Band depth (mm)',-.2,.6,.05,!design.bandCount)}
+            {numericDecoration('bandWidthMm','Line width (mm)',.4,3,.05,!design.bandCount)}
+            {numericDecoration('bandDepthMm','Band depth (mm)',-.2,1,.05,!design.bandCount)}
             {design.bandStyle==='wavy' && <>
                 {numericDecoration('bandWaveCount','Line waves per turn',1,16,1,!design.bandCount)}
-                {numericDecoration('bandWaveAmplitudeMm','Line wave amplitude (±mm)',0,bounds.amplitudeMax,.05,!design.bandCount)}
+                {numericDecoration('bandWaveAmplitudeMm','Line waviness (mm up/down from centerline)',0,3,.05,!design.bandCount)}
             </>}
-            <small>Horizontal lines on the sleeve. Two leave the middle free. Width is axial; wave amplitude is ± centerline travel. Positive depth raises; negative engraves; zero has no relief.</small>
+            {[2,4,5].includes(design.bandCount) && <label><span>Distance from center (mm)</span><input type="number" min="0" max="20" step="0.05" placeholder={String(design.keySleeveAxialWidthMm/4)} aria-invalid={design.bandDistanceMm!==null && (!Number.isFinite(design.bandDistanceMm) || design.bandDistanceMm<0 || design.bandDistanceMm>20)} value={decorationDraft.bandDistanceMm} onChange={e=>setDecoration('bandDistanceMm',e.target.value)} /></label>}
+            {[4,5].includes(design.bandCount) && numericDecoration('bandPairSpacingMm','Pair spacing (mm center-to-center)',.1,20,.05)}
+            <small>Width runs up/down the sleeve. Waviness moves each line that far above and below its centerline; all lines wave together. Distance measures from the sleeve middle to each single line or pair midpoint (blank follows one quarter of sleeve height). Pair spacing measures between the two line centers. Positive depth raises outward; negative cuts inward.</small>
         </div></details>
         <details open><summary>Text</summary><div className="control-grid">
-            <label className="full-control"><span>Sleeve text</span><input type="text" maxLength="24" value={decorationDraft.sleeveText}
-                disabled={design.bandCount===1} onChange={e=>setDecoration('sleeveText',e.target.value)} /></label>
-            {numericDecoration('textSizeMm','Font size (mm)',2,bounds.textSizeMax,.1,design.bandCount===1)}
-            {numericDecoration('textDepthMm','Text depth (mm)',-.2,.6,.05,design.bandCount===1)}
-            <small>{design.bandCount===1 ? 'One center band hides text. Your draft is retained; choose 0 or 2 bands to restore it.' :
-                `Bold curved lettering, centered opposite the tooth even with Marker None. Up to 24 Latin letters, digits or simple punctuation; arc width ${textMetrics(design.sleeveText,design.textSizeMm).width.toFixed(1)} / ${bounds.arcLimit.toFixed(1)} mm. Positive raises; negative engraves.`}</small>
+            <label className="full-control"><span>{hasCenterBand(design)?'Sleeve text · above center band':'Sleeve text'}</span><input type="text" maxLength="96" value={decorationDraft.sleeveText} onChange={e=>setDecoration('sleeveText',e.target.value)} /></label>
+            {hasCenterBand(design) && <label className="full-control"><span>Sleeve text · below center band</span><input type="text" maxLength="96" value={decorationDraft.sleeveTextSecond} onChange={e=>setDecoration('sleeveTextSecond',e.target.value)} /></label>}
+            {numericDecoration('textSizeMm','Font size (mm)',.5,10,.1)}
+            {numericDecoration('textDepthMm','Text depth (mm)',-.2,1,.05)}
+            <small>Curved bold lettering opposite the tooth. Counts 1, 3 and 5 place two independent lines above/below the center band, between neighboring bands where present. Both drafts survive count changes. Up to 96 characters per line; blank omits a line. Positive depth raises outward; negative cuts inward. Fit warnings keep your requested font size.</small>
         </div></details>
-        <details className="visual-guide"><summary>Visual guide</summary>
-            <figure><div className="guide-views"><img src="./docs/decoration-guide-marker.svg" alt="Actual model: heart marker behind the tooth and two wavy decorative bands near the edges." /><img src="./docs/decoration-guide-text.svg" alt="Opposite side of the same actual model: curved AMAZE lettering between the bands." /></div>
-            <figcaption>Example model · two wavy bands and raised lettering. Shape controls change the sleeve; Appearance changes only the preview.</figcaption></figure>
-        </details>
+
         </div>
     );
 

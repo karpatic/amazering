@@ -36,14 +36,20 @@ Decorative bands and Sleeve lettering. Engraving belongs to the Outer ring. Assi
 filaments per part in Bambu Studio; keep the object together. Existing embedded
 mesh overlaps need slicer review before multicolor printing.
 
-The 3D panel offers None or nine tooth-marker silhouettes: rounded dot (default),
-pill, rounded square, heart, cross, X, cat head, flower, and rounded star.
-Changing a marker preserves the maze and working tooth. Signed marker, band
-and text depths raise or actually engrave the sleeve. Two decorative bands
-frame bold curved text opposite the tooth; one center band hides text while
-retaining its draft. The collapsed Visual guide uses annotated app screenshots.
-See the decoration section of PRINT_DESIGN.md for defaults, dynamic fit bounds
-and the wall floor. Geometry failures block stale exports.
+The 3D panel offers None or nine tooth-marker silhouettes, defaulting to a raised
+heart. Signed marker, band and text depths raise or actually engrave the sleeve.
+The new aesthetic awaiting Carlos’s approval uses four 1 mm wavy bands at +1 mm,
+six cycles with 1 mm up/down travel, six 1 mm side bulges and six 1 mm inward
+edge dips. Exact lowercase `a - maze - ring` is engraved 0.2 mm at 2.5 mm font size.
+Band count supports 0–5; pairs expose spacing and distance controls. Counts 1,
+3 and 5 place independent text drafts above/below the center band. Other counts
+retain the second draft while showing the first at the middle. Nominal fit
+warnings never shrink requested text or block otherwise valid geometry.
+Actual solid failures still pause preview and guard against stale exports.
+
+Rendering is followed by Appearance, the existing Visual guide and design inputs.
+The guide screenshots are earlier examples and will not be remade until aesthetic
+approval. See PRINT_DESIGN.md for exact defaults, placement and print limitations.
 
 The standard has a 21.2 mm inner tube, 15 mm outer sleeve, full-height bottom
 passage, curved/ramped tooth and outward tactile locator. Walls project 1 mm

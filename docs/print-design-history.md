@@ -472,3 +472,76 @@ test travel through the exact maze under controlled axial offset and tilt. The
 reported history of maze walls contacting neighboring fingers remains an open
 safety concern; rounded CAD edges and the wider sleeve reduce modeled sharpness
 but do not establish ergonomic safety.
+
+
+## Superseded initial decoration controls
+
+Archived by: Codex app agent — 2026-09-12. This records the earlier 0–2-band design, before Carlos’s current aesthetic request.
+
+## Sleeve decorations and compact controls
+
+Author: Codex app agent — September 12, 2026.
+
+Only decorative defaults changed. Bore 18 mm, tube 21.2/0.6 mm, sleeve
+15/0.8 mm, tooth, maze wall profiles, running gaps and both existing wave-mode
+defaults remain fixed. Shape, Marker, Decorative bands, Text and Appearance
+are native disclosure groups below the prominent preview. Maze edits, dimension
+drafts, orbit/zoom and paused rotation survive decoration changes. Appearance
+retains the synchronized 0–30% automatic fade and manual slider override.
+
+| Decoration input | Default | Limits / step |
+| --- | --- | --- |
+| Marker shape | Rounded dot | None or the existing nine silhouettes |
+| Marker signed depth | +0.40 mm | −0.20…+0.60 mm / 0.05 |
+| Decorative band quantity | 2 | 0, 1, 2 |
+| Line style | Straight | Straight or wavy |
+| Line width (axial) | 0.60 mm | 0.40…1.20 mm / 0.05, reduced by fit bound |
+| Band signed depth | +0.25 mm | −0.20…+0.60 mm / 0.05 |
+| Line waves per turn | 6 | 1…16 whole cycles |
+| Line wave amplitude | ±0.35 mm | 0…±0.80 mm / 0.05, reduced by fit bound |
+| Sleeve text | AMAZE | Up to 24 Latin letters, digits, spaces, `. , ! ? ' & -` |
+| Font size | 2.5 mm | 2…4 mm / 0.1, reduced by axial and arc fit bounds |
+| Text signed depth | +0.25 mm | −0.20…+0.60 mm / 0.05 |
+
+Positive depths add curved solid relief; negative depths remove sleeve material;
+zero adds no relief. Marker None removes only the decorative locator. Lettering
+uses the local Helvetiker Bold outline, including counters, wrapped around the
+sleeve. Its visible outline is centered both axially and at π from the unchanged
+tooth reference, regardless of marker shape. Font size is the physical font
+scale; a particular glyph's visible height can differ. Blank text is allowed.
+A center band suppresses text even at zero band depth, retaining the complete
+draft (including an invalid draft) for recovery with 0 or 2 bands.
+
+Two bands occupy symmetric edge regions. Their centerlines stay inside the worst
+rim inset with 0.65 mm margin. Define usable height U = sleeve height minus
+2 × (active rim height + 0.65 mm), and band envelope E = line width + twice the
+active line amplitude. Each band must fit within U/4. The central text region
+with two bands is U − 2E − 0.8 mm. Text is also limited to a centered arc of
+0.8π times the nominal outer radius (144°). Input maxima follow these bounds;
+invalid combinations pause preview and exports rather than shrinking the tooth,
+changing fit or silently altering decorations. Shape inputs retain the existing
+2–6 rows, 6–12 columns, chart sizes 14.1–22.6 mm, row-dependent height through
+31.2 mm, radial 0–32 / 0–3 mm, and rim 0–32 / 0–1 mm limits and steps.
+
+All engraving cutters reference the original sleeve, so overlaps remove their
+union, not accumulated depths. A protective cylinder reserves a nominal
+0.55 mm radial wall (>0.54 mm including its faceting), outside the unchanged
+mating radius. The −0.20 mm input limit ordinarily leaves about 0.60 mm.
+Raised solids follow the radial-wave surface and embed 0.15 mm into the sleeve;
+attachment is checked as positive-volume intersection. They remain overlapping
+multipart volumes, like the existing tooth attachment. Assign filament ownership
+and review fine strokes in the slicer. There is no negative-colored overlay.
+
+The shared geometry goes to preview, STL and multipart 3MF. None, engraved or
+zero-relief features create no empty 3MF resources; engravings belong to Outer
+ring. Runtime conversion welds sub-micron duplicate intersections and rejects
+collapsed triangles or non-closed/non-oriented results. Failed rebuilds keep the
+last preview under an error overlay and disable/guard both export handlers.
+
+The small collapsed Visual guide embeds two actual app-rendered screenshots,
+lightly annotated with Marker, Decorative bands and Text callouts. Views stack
+on mobile for legible labels. Sources and browser evidence are under
+`/tmp/amazering-decoration-evidence/`; the committed SVGs embed their source
+pixels and do not depend on temporary paths. See
+[decoration verification](docs/decoration-verification.md) for measured evidence.
+These are geometry/export checks, not sliced-toolpath or physical-print qualification.

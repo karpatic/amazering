@@ -1,4 +1,4 @@
-import { DECORATION_DEFAULTS, validateDecorations } from './decorationGeometry.js?v=decorations';
+import { DECORATION_DEFAULTS, validateDecorations, decorationWarnings } from './decorationGeometry.js?v=decorations';
 import { areMazeDimensionsValid } from "./mazeModel.js?v=decorations";
 
 import { MARKER_SHAPES } from "./markerGeometry.js?v=decorations";
@@ -84,11 +84,11 @@ export const PRINT_DESIGNS = Object.freeze([
         ...DECORATION_DEFAULTS,
         id: STANDARD_DESIGN_ID,
         name: "A-Maze-Ring",
-        markerShape: "dot",
-        outerWaveCount: 0,
-        outerWaveHeightMm: 0,
-        rimWaveCount: 0,
-        rimWaveHeightMm: 0,
+        markerShape: "heart",
+        outerWaveCount: 6,
+        outerWaveHeightMm: 1,
+        rimWaveCount: 6,
+        rimWaveHeightMm: 1,
         summary: "Curved tooth, tactile locator, and full-height maze passages.",
         qualification: "Accepted standard model.",
         geometryStyle: "comfort",
@@ -251,10 +251,10 @@ export const validatePrintDesign = (design, maze) => {
     const waveCount = design.outerWaveCount ?? 0;
     const waveHeight = design.outerWaveHeightMm ?? 0;
     if (!Number.isInteger(waveCount) || waveCount < 0 || waveCount > 32) {
-        errors.push("Use 0–32 whole radial exterior waves (0 for none).");
+        errors.push("Use 0–32 whole side bulges around the ring (0 for none).");
     }
     if (!Number.isFinite(waveHeight) || waveHeight < 0 || waveHeight > 3) {
-        errors.push("Use a radial exterior wave height from 0 to 3 mm.");
+        errors.push("Use an outward bulge from 0 to 3 mm.");
     }
     const rimCount = design.rimWaveCount ?? 0;
     const rimHeight = design.rimWaveHeightMm ?? 0;
@@ -262,10 +262,10 @@ export const validatePrintDesign = (design, maze) => {
         errors.push("Use 0–32 whole rim/edge waves (0 for none).");
     }
     if (!Number.isFinite(rimHeight) || rimHeight < 0 || rimHeight > 1) {
-        errors.push("Use an axial rim wave height from 0 to 1 mm.");
+        errors.push("Use an edge wave depth from 0 to 1 mm.");
     }
     if (!Number.isFinite(design.boreDiameterMm) || design.boreDiameterMm < 14.1 || design.boreDiameterMm > 22.6) errors.push("Use a bore from the 14.1–22.6 mm ring-size chart.");
-    const warnings = [];
+    const warnings = decorationWarnings(design);
     if (rimCount > 0 && rimHeight > 0) {
         warnings.push("Wavy lower rim: no continuous flat bed footprint. Review adhesion and support in the slicer; this geometry is not print-qualified.");
     }
