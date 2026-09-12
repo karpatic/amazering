@@ -8,6 +8,7 @@ export const DECORATION_DEFAULTS = Object.freeze({
     bandWidthMm: 1,
     bandDepthMm: 1,
     bandWaveCount: 6,
+    bandWaveAlignmentDeg: 0,
     bandWaveAmplitudeMm: 1,
     bandPairSpacingMm: 1.4,
     // null follows H/4 as the physical height changes; explicit values are mm.
@@ -76,6 +77,7 @@ export const validateDecorations = (input) => {
     if (![0,1,2,3,4,5].includes(d.bandCount)) errors.push('Choose 0–5 whole decorative bands.');
     if (!['straight','wavy'].includes(d.bandStyle)) errors.push('Choose straight or wavy lines.');
     if (d.bandCount && d.bandStyle==='wavy' && (!Number.isInteger(d.bandWaveCount) || d.bandWaveCount<1 || d.bandWaveCount>16)) errors.push('Use 1–16 whole line waves.');
+    if (d.bandCount && d.bandStyle==='wavy' && (!Number.isFinite(d.bandWaveAlignmentDeg) || d.bandWaveAlignmentDeg<0 || d.bandWaveAlignmentDeg>360)) errors.push('Wave alignment: use 0–360 degrees of one wave cycle.');
     for (const {text} of textLines(d)) {
         if (typeof text!=='string' || !/^[A-Za-z0-9 .,!?'&-]{0,96}$/.test(text)) errors.push('Each text line supports up to 96 Latin letters, digits, spaces and . , ! ? apostrophe & -');
     }
@@ -125,16 +127,31 @@ const geometryFromSolid = (solid) => {
     // Float32 output can collapse distinct Boolean intersections to exactly
     // identical points or sub-micron edges. Weld at 0.000001 mm and omit
     // only collapsed faces; then verify the resulting closed, oriented mesh.
-    const indices = [],
-        seen = new Map();
+    const indices = [], cells = new Map(), weldMm = 1e-6;
     for (let i = 0; i < mesh.vertProperties.length; i += mesh.numProp) {
-        const xyz = Array.from(mesh.vertProperties.slice(i, i + 3)),
-            key = xyz.map((v) => Math.round(v * 1e6)).join(",");
-        if (!seen.has(key)) {
-            seen.set(key, g.vertices.length);
+        const xyz = Array.from(mesh.vertProperties.slice(i, i + 3));
+        const cell = xyz.map(v => Math.floor(v / weldMm));
+        let index;
+        // Search adjacent cells: rounding alone misses almost identical points
+        // on opposite sides of a cell boundary after Float32 conversion.
+        for (let dx = -1; dx <= 1; dx++)
+            for (let dy = -1; dy <= 1; dy++)
+                for (let dz = -1; dz <= 1; dz++) {
+                    const nearby = cells.get([cell[0]+dx, cell[1]+dy, cell[2]+dz].join(',')) || [];
+                    for (const candidate of nearby) {
+                        const v = g.vertices[candidate];
+                        if (Math.hypot(v.x-xyz[0], v.y-xyz[1], v.z-xyz[2]) <= weldMm &&
+                            (index === undefined || candidate < index)) index = candidate;
+                    }
+                }
+        if (index === undefined) {
+            index = g.vertices.length;
             g.vertices.push(new THREE.Vector3(...xyz));
+            const key = cell.join(','), bucket = cells.get(key) || [];
+            bucket.push(index);
+            cells.set(key, bucket);
         }
-        indices.push(seen.get(key));
+        indices.push(index);
     }
     for (let i = 0; i < mesh.triVerts.length; i += 3) {
         const [a, b, c] = Array.from(
@@ -312,7 +329,7 @@ export const decorateSleeve = (
                         offset +
                         (d.bandStyle === "wavy"
                             ? d.bandWaveAmplitudeMm *
-                              Math.sin(d.bandWaveCount * theta)
+                              Math.sin(d.bandWaveCount * theta + (d.bandWaveAlignmentDeg % 360) * Math.PI / 180)
                             : 0);
                     for (const [dr, dy] of [
                         [

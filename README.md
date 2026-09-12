@@ -46,6 +46,9 @@ Band count supports 0–5; pairs expose spacing and distance controls. Counts 1,
 retain the second draft while showing the first at the middle. Nominal fit
 warnings never shrink requested text or block otherwise valid geometry.
 Actual solid failures still pause preview and guard against stale exports.
+Wavy decorative bands also offer Wave alignment: 0–360° of one cycle relative
+to the fixed marker, default 0°. Straight retains the offset but ignores it.
+See [wave alignment verification](docs/wave-alignment-verification.md).
 
 Rendering is followed by Appearance, the existing Visual guide and design inputs.
 The guide screenshots are earlier examples and will not be remade until aesthetic

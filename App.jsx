@@ -194,11 +194,12 @@ const MazeGenerator = () => {
             {generationError && <p className="design-error" role="alert">{generationError}</p>}
         </>
     );
-    const numericDecoration = (key,label,min,max,step,disabled=false) => <label>
-        <span>{label}</span><input type="number" min={min} max={Math.max(min,Math.floor(max*100)/100)} step={step}
+    const numericDecoration = (key,label,min,max,step,disabled=false,note=null) => <label>
+        <span id={`${key}-label`}>{label}</span><input type="number" aria-labelledby={`${key}-label`} min={min} max={Math.max(min,Math.floor(max*100)/100)} step={step}
             value={decorationDraft[key]} disabled={disabled}
             aria-invalid={!disabled && (!Number.isFinite(design[key]) || design[key]<min || design[key]>max)}
-            onChange={event=>setDecoration(key,event.target.value)} /></label>;
+            aria-describedby={note ? `${key}-note` : undefined}
+            onChange={event=>setDecoration(key,event.target.value)} />{note && <small id={`${key}-note`}>{note}</small>}</label>;
     const sizeControls = (
         <div className="decoration-controls">
         <details className="visual-guide"><summary>Visual guide</summary>
@@ -276,14 +277,15 @@ const MazeGenerator = () => {
             <label><span>Line style</span><select disabled={!design.bandCount} value={decorationDraft.bandStyle} onChange={e=>setDecoration('bandStyle',e.target.value)}>
                 <option value="straight">Straight</option><option value="wavy">Wavy</option></select></label>
             {numericDecoration('bandWidthMm','Line width (mm)',.4,3,.05,!design.bandCount)}
-            {numericDecoration('bandDepthMm','Band depth (mm)',-.2,1,.05,!design.bandCount)}
+            {numericDecoration('bandDepthMm','Band depth (mm)',-.2,1,.05,!design.bandCount,'Negative engraves / Positive raises / 0 none. Range: −0.2 to +1 mm.')}
             {design.bandStyle==='wavy' && <>
+                {numericDecoration('bandWaveAlignmentDeg','Wave alignment (°)',0,360,1,!design.bandCount,'0–360° of one wave cycle relative to the fixed marker. All decorative lines shift together; 180° swaps crests/troughs; 360° = 0°.')}
                 {numericDecoration('bandWaveCount','Line waves per turn',1,16,1,!design.bandCount)}
                 {numericDecoration('bandWaveAmplitudeMm','Line waviness (mm up/down from centerline)',0,3,.05,!design.bandCount)}
             </>}
             {[2,4,5].includes(design.bandCount) && <label><span>Distance from center (mm)</span><input type="number" min="0" max="20" step="0.05" placeholder={String(design.keySleeveAxialWidthMm/4)} aria-invalid={design.bandDistanceMm!==null && (!Number.isFinite(design.bandDistanceMm) || design.bandDistanceMm<0 || design.bandDistanceMm>20)} value={decorationDraft.bandDistanceMm} onChange={e=>setDecoration('bandDistanceMm',e.target.value)} /></label>}
             {[4,5].includes(design.bandCount) && numericDecoration('bandPairSpacingMm','Pair spacing (mm center-to-center)',.1,20,.05)}
-            <small>Width runs up/down the sleeve. Waviness moves each line that far above and below its centerline; all lines wave together. Distance measures from the sleeve middle to each single line or pair midpoint (blank follows one quarter of sleeve height). Pair spacing measures between the two line centers. Positive depth raises outward; negative cuts inward.</small>
+            <small>Width runs up/down the sleeve. Waviness moves each line that far above and below its centerline; all lines wave together. Distance measures from the sleeve middle to each single line or pair midpoint (blank follows one quarter of sleeve height). Pair spacing measures between the two line centers.</small>
         </div></details>
         <details open><summary>Text</summary><div className="control-grid">
             <label className="full-control"><span>{hasCenterBand(design)?'Sleeve text · above center band':'Sleeve text'}</span><input type="text" maxLength="96" value={decorationDraft.sleeveText} onChange={e=>setDecoration('sleeveText',e.target.value)} /></label>
